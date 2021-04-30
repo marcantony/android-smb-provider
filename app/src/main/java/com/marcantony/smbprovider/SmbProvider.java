@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import jcifs.CIFSException;
 import jcifs.CloseableIterator;
+import jcifs.SmbConstants;
 import jcifs.SmbResource;
 import jcifs.context.SingletonContext;
 import jcifs.smb.SmbFile;
@@ -110,7 +111,6 @@ public class SmbProvider extends DocumentsProvider {
             file.children().forEachRemaining(child -> {
                 Log.d(TAG, "found child document: " + "\"" + child.getName() + "\"");
                 String mimeType = getMimeTypeFromPath(child.getName());
-                Log.d(TAG, child.getName() + " mimeType: " + mimeType);
                 try {
                     result.newRow()
                             .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, child.getLocator().getCanonicalURL())
@@ -139,7 +139,6 @@ public class SmbProvider extends DocumentsProvider {
         Log.d(TAG, "querying document: " + "\"" + documentId + "\"");
         Log.d(TAG, "document has name: " + "\"" + p.getFileName() + "\"");
         String mimeType = getMimeTypeFromPath(p.getFileName().toString());
-        Log.d(TAG, documentId + " mimeType: " + mimeType);
         result.newRow()
                 .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                 .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, p.getFileName().toString())
@@ -173,10 +172,17 @@ public class SmbProvider extends DocumentsProvider {
         }
 
         try {
-            SmbFile file = new SmbFile(documentId, SingletonContext.getInstance());
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new SmbProxyFileDescriptorCallback(new SmbRandomAccessFile(file, mode)),
+                    new SmbProxyFileDescriptorCallback(
+                            new SmbRandomAccessFile(
+                                    documentId,
+                                    mode,
+                                    SmbConstants.DEFAULT_SHARING,
+                                    SingletonContext.getInstance()
+                            )
+                    ),
+//                    new SmbProxyFileDescriptorCallback(documentId, mode),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {

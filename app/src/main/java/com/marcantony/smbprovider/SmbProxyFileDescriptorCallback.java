@@ -1,6 +1,8 @@
 package com.marcantony.smbprovider;
 
 import android.os.ProxyFileDescriptorCallback;
+import android.system.ErrnoException;
+import android.system.OsConstants;
 import android.util.Log;
 
 import com.hierynomus.msdtyp.AccessMask;
@@ -15,13 +17,18 @@ import com.hierynomus.smbj.share.File;
 import com.hierynomus.smbj.share.Share;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import jcifs.SmbConstants;
+import jcifs.context.SingletonContext;
 import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
 import jcifs.smb.SmbRandomAccessFile;
 
 public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback {
@@ -40,35 +47,40 @@ public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback 
         onCloseCallbackOption = Optional.ofNullable(onCloseCallback);
     }
 
+//    private final Future<SmbRandomAccessFile> file;
+
+//    public SmbProxyFileDescriptorCallback(String url, String mode) {
+//        file = Executors.newSingleThreadExecutor().submit(() ->
+//                new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance()));
+//    }
+
     @Override
-    public long onGetSize() {
+    public long onGetSize() throws ErrnoException {
         try {
-            Log.d(TAG, "file size: " + file.length());
             return file.length();
         } catch (SmbException e) {
-            throw new RuntimeException(e);
+            throw translateSmbException(e);
         }
     }
 
     @Override
-    public int onRead(long offset, int size, byte[] data) {
-        Log.d(TAG, String.format("reading %d bytes at pos %d with buffer length %d", size, offset, data.length));
+    public int onRead(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            int read = file.read(data, Math.toIntExact(offset), size);
-            Log.d(TAG, String.format("read %d bytes", read));
-            return read;
+            file.seek(offset);
+            return file.read(data, 0, size);
         } catch (SmbException e) {
-            throw new RuntimeException(e);
+            throw translateSmbException(e);
         }
     }
 
     @Override
-    public int onWrite(long offset, int size, byte[] data) {
+    public int onWrite(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            file.write(data, Math.toIntExact(offset), size);
+            file.seek(offset);
+            file.write(data, 0, size);
             return size;
         } catch (SmbException e) {
-            throw new RuntimeException(e);
+            throw translateSmbException(e);
         }
     }
 
@@ -82,9 +94,15 @@ public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback 
         try {
             file.close();
         } catch (SmbException e) {
-            throw new RuntimeException(e);
+            Log.e(TAG, "got error when trying to close file", e);
         } finally {
             onCloseCallbackOption.ifPresent(Runnable::run);
         }
+    }
+
+    private ErrnoException translateSmbException(SmbException e) {
+        Log.e(TAG, "got NTSTATUS: " + e.getNtStatus());
+        int errno = OsConstants.EIO;
+        return new ErrnoException("SmbProxyFile", errno, e);
     }
 }
