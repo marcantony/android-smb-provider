@@ -82,6 +82,7 @@ public class SmbProvider extends DocumentsProvider {
     private StorageManager storageManager;
     private HandlerThread handlerThread;
     private SmbDetailsManager detailsManager;
+    private ExecutorService executor;
 
     @Override
     public Cursor queryRoots(String[] projection) {
@@ -174,15 +175,7 @@ public class SmbProvider extends DocumentsProvider {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new SmbProxyFileDescriptorCallback(
-                            new SmbRandomAccessFile(
-                                    documentId,
-                                    mode,
-                                    SmbConstants.DEFAULT_SHARING,
-                                    SingletonContext.getInstance()
-                            )
-                    ),
-//                    new SmbProxyFileDescriptorCallback(documentId, mode),
+                    new SmbProxyFileDescriptorCallback(documentId, mode, executor),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {
@@ -203,6 +196,8 @@ public class SmbProvider extends DocumentsProvider {
         handlerThread.start();
 
         detailsManager = new SmbDetailsManager();
+
+        executor = Executors.newSingleThreadExecutor();
 
         return storageManager != null;
     }

@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -35,52 +36,46 @@ public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback 
 
     private static final String TAG = "smb callback";
 
-    private final SmbRandomAccessFile file;
-    private final Optional<Runnable> onCloseCallbackOption;
+    private final Future<SmbRandomAccessFile> file;
 
-    public SmbProxyFileDescriptorCallback(SmbRandomAccessFile file) {
-        this(file, null);
+    public SmbProxyFileDescriptorCallback(String url, String mode, ExecutorService executor) {
+        file = executor.submit(() ->
+                new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance()));
     }
-
-    public SmbProxyFileDescriptorCallback(SmbRandomAccessFile file, Runnable onCloseCallback) {
-        this.file = file;
-        onCloseCallbackOption = Optional.ofNullable(onCloseCallback);
-    }
-
-//    private final Future<SmbRandomAccessFile> file;
-
-//    public SmbProxyFileDescriptorCallback(String url, String mode) {
-//        file = Executors.newSingleThreadExecutor().submit(() ->
-//                new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance()));
-//    }
 
     @Override
     public long onGetSize() throws ErrnoException {
         try {
-            return file.length();
+            return file.get().length();
         } catch (SmbException e) {
             throw translateSmbException(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public int onRead(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            file.seek(offset);
-            return file.read(data, 0, size);
+            file.get().seek(offset);
+            return file.get().read(data, 0, size);
         } catch (SmbException e) {
             throw translateSmbException(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public int onWrite(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            file.seek(offset);
-            file.write(data, 0, size);
+            file.get().seek(offset);
+            file.get().write(data, 0, size);
             return size;
         } catch (SmbException e) {
             throw translateSmbException(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -92,11 +87,9 @@ public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback 
     @Override
     public void onRelease() {
         try {
-            file.close();
-        } catch (SmbException e) {
+            file.get().close();
+        } catch (SmbException | InterruptedException | ExecutionException e) {
             Log.e(TAG, "got error when trying to close file", e);
-        } finally {
-            onCloseCallbackOption.ifPresent(Runnable::run);
         }
     }
 
