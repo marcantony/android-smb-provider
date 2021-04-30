@@ -2,15 +2,18 @@ package com.marcantony.smbprovider;
 
 import com.marcantony.smbprovider.smb.SmbDetails;
 
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class SmbDetailsManager {
 
-    public static List<SmbDetails> getAllDetails() {
-        return Collections.singletonList(
-                new SmbDetails("raspberrypi", "Media")
-        );
+    public List<SmbDetails> getAllDetails() {
+        List<SmbDetails> details = new LinkedList<>();
+
+        details.add(new SmbDetails("raspberrypi", "Media"));
+        details.add(new SmbDetails("raspberrypi", "foo"));
+
+        return details;
     }
 
 }

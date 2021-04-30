@@ -31,11 +31,14 @@ import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 import com.hierynomus.smbj.share.Share;
+import com.marcantony.smbprovider.smb.SmbAuthDetails;
+import com.marcantony.smbprovider.smb.SmbDetails;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
@@ -44,26 +47,29 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import jcifs.CIFSException;
+import jcifs.CloseableIterator;
+import jcifs.SmbResource;
+import jcifs.context.SingletonContext;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbRandomAccessFile;
+
 public class SmbProvider extends DocumentsProvider {
 
     private static final String TAG = "SmbProvider";
 
-    public static final String HOSTNAME = "raspberrypi";
-    public static final String SHARE = "Media";
-    private static final String ROOT_ID = "\\";
-
     private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
     private static final Set<String> IGNORED_DOCUMENTS = Set.of(".", "..");
 
-    private static final String[] DEFAULT_ROOT_PROJECTION = new String[]{
+    private static final String[] DEFAULT_ROOT_PROJECTION = new String[] {
             DocumentsContract.Root.COLUMN_ROOT_ID,
             DocumentsContract.Root.COLUMN_DOCUMENT_ID,
             DocumentsContract.Root.COLUMN_TITLE,
+            DocumentsContract.Root.COLUMN_SUMMARY,
             DocumentsContract.Root.COLUMN_FLAGS,
             DocumentsContract.Root.COLUMN_ICON,
     };
-
-    private static final String[] DEFAULT_DOCUMENT_PROJECTION = new String[]{
+    private static final String[] DEFAULT_DOCUMENT_PROJECTION = new String[] {
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
             DocumentsContract.Document.COLUMN_MIME_TYPE,
@@ -72,29 +78,24 @@ public class SmbProvider extends DocumentsProvider {
             DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
 
-    private final SmbConfig config = SmbConfig.builder()
-            .withTimeout(5, TimeUnit.SECONDS)
-            .withSoTimeout(10, TimeUnit.SECONDS)
-            .build();
-    private final SMBClient client = new SMBClient(config);
-
     private StorageManager storageManager;
     private HandlerThread handlerThread;
-    private SmbConnectionManager connectionManager;
-
-    private static final SmbConnectionDetails CONNECTION_DETAILS =
-            new SmbConnectionDetails(HOSTNAME, AuthenticationContext.anonymous(), SHARE);
+    private SmbDetailsManager detailsManager;
 
     @Override
     public Cursor queryRoots(String[] projection) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_ROOT_PROJECTION);
 
-        result.newRow()
-                .add(DocumentsContract.Root.COLUMN_ROOT_ID, SHARE)
-                .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, ROOT_ID)
-                .add(DocumentsContract.Root.COLUMN_TITLE, "SMB")
-                .add(DocumentsContract.Root.COLUMN_FLAGS, null)
-                .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
+        for (SmbDetails details : detailsManager.getAllDetails()) {
+            String documentId = String.format("//%s/%s", details.hostname, details.share);
+            result.newRow()
+                    .add(DocumentsContract.Root.COLUMN_ROOT_ID, details.share)
+                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, "smb:" + documentId + "/")
+                    .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", documentId))
+                    .add(DocumentsContract.Root.COLUMN_SUMMARY, details.authDetails.map(ad -> ad.username).orElse("Anonymous"))
+                    .add(DocumentsContract.Root.COLUMN_FLAGS, null)
+                    .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
+        }
 
         return result;
     }
@@ -103,24 +104,27 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        DiskShare share = connectionManager.getShare(CONNECTION_DETAILS);
-        String path = ROOT_ID.equals(parentDocumentId) ? "" : parentDocumentId;
-        Log.d(TAG, "querying child documents of " + "\"" + path + "\"");
-        for (FileIdBothDirectoryInformation f : share.list(path)) {
-            Log.d(TAG, "found child document: " + "\"" + f.getFileName() + "\"");
-            if (IGNORED_DOCUMENTS.contains(f.getFileName())) {
-                Log.d(TAG, "ignoring document");
-                continue;
-            }
-            String mimeType = getMimeTypeFromPath(f.getFileName());
-            Log.d(TAG, path + " mimeType: " + mimeType);
-            result.newRow()
-                    .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, Paths.get(path, f.getFileName()).toString())
-                    .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, f.getFileName())
-                    .add(DocumentsContract.Document.COLUMN_MIME_TYPE, mimeType)
-                    .add(DocumentsContract.Document.COLUMN_SIZE, f.getEndOfFile())
-                    .add(DocumentsContract.Document.COLUMN_FLAGS, null)
-                    .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, f.getLastWriteTime().toEpochMillis());
+        try {
+            Log.d(TAG, "getting children of: " + parentDocumentId);
+            SmbFile file = new SmbFile(parentDocumentId, SingletonContext.getInstance());
+            file.children().forEachRemaining(child -> {
+                Log.d(TAG, "found child document: " + "\"" + child.getName() + "\"");
+                String mimeType = getMimeTypeFromPath(child.getName());
+                Log.d(TAG, child.getName() + " mimeType: " + mimeType);
+                try {
+                    result.newRow()
+                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, child.getLocator().getCanonicalURL())
+                            .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, Paths.get(child.getName()).getFileName())
+                            .add(DocumentsContract.Document.COLUMN_MIME_TYPE, mimeType)
+                            .add(DocumentsContract.Document.COLUMN_SIZE, child.length())
+                            .add(DocumentsContract.Document.COLUMN_FLAGS, null)
+                            .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, child.lastModified());
+                } catch (CIFSException e) {
+                    Log.e(TAG, "could not get details of file: " + child.getName(), e);
+                }
+            });
+        } catch (MalformedURLException | CIFSException e) {
+            throw new RuntimeException(e);
         }
 
         return result;
@@ -130,13 +134,12 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryDocument(String documentId, String[] projection) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        String path = ROOT_ID.equals(documentId) ? "" : documentId;
-        Path p = Paths.get(path);
+        Path p = Paths.get(documentId);
 
-        Log.d(TAG, "querying document: " + "\"" + path + "\"");
+        Log.d(TAG, "querying document: " + "\"" + documentId + "\"");
         Log.d(TAG, "document has name: " + "\"" + p.getFileName() + "\"");
         String mimeType = getMimeTypeFromPath(p.getFileName().toString());
-        Log.d(TAG, path + " mimeType: " + mimeType);
+        Log.d(TAG, documentId + " mimeType: " + mimeType);
         result.newRow()
                 .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                 .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, p.getFileName().toString())
@@ -169,20 +172,11 @@ public class SmbProvider extends DocumentsProvider {
             throw new UnsupportedOperationException("mode " + mode + " not supported");
         }
 
-        DiskShare share = connectionManager.getShare(CONNECTION_DETAILS);
-        File file = share.openFile(
-                documentId,
-                EnumSet.of(AccessMask.FILE_READ_DATA),
-                null,
-                EnumSet.of(SMB2ShareAccess.FILE_SHARE_READ),
-                SMB2CreateDisposition.FILE_OPEN,
-                null
-        );
-
         try {
+            SmbFile file = new SmbFile(documentId, SingletonContext.getInstance());
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new SmbProxyFileDescriptorCallback(file),
+                    new SmbProxyFileDescriptorCallback(new SmbRandomAccessFile(file, mode)),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {
@@ -202,7 +196,7 @@ public class SmbProvider extends DocumentsProvider {
         handlerThread = new HandlerThread("smb");
         handlerThread.start();
 
-        connectionManager = new SmbConnectionManager(client);
+        detailsManager = new SmbDetailsManager();
 
         return storageManager != null;
     }

@@ -21,35 +21,55 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbRandomAccessFile;
+
 public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback {
 
     private static final String TAG = "smb callback";
 
-    private final File file;
+    private final SmbRandomAccessFile file;
     private final Optional<Runnable> onCloseCallbackOption;
 
-    public SmbProxyFileDescriptorCallback(File file) {
+    public SmbProxyFileDescriptorCallback(SmbRandomAccessFile file) {
         this(file, null);
     }
 
-    public SmbProxyFileDescriptorCallback(File file, Runnable onCloseCallback) {
+    public SmbProxyFileDescriptorCallback(SmbRandomAccessFile file, Runnable onCloseCallback) {
         this.file = file;
         onCloseCallbackOption = Optional.ofNullable(onCloseCallback);
     }
 
     @Override
     public long onGetSize() {
-        return file.getFileInformation().getStandardInformation().getEndOfFile();
+        try {
+            Log.d(TAG, "file size: " + file.length());
+            return file.length();
+        } catch (SmbException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public int onRead(long offset, int size, byte[] data) {
-        return file.read(data, offset, 0, size);
+        Log.d(TAG, String.format("reading %d bytes at pos %d with buffer length %d", size, offset, data.length));
+        try {
+            int read = file.read(data, Math.toIntExact(offset), size);
+            Log.d(TAG, String.format("read %d bytes", read));
+            return read;
+        } catch (SmbException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public int onWrite(long offset, int size, byte[] data) {
-        return file.write(data, offset, 0, size);
+        try {
+            file.write(data, Math.toIntExact(offset), size);
+            return size;
+        } catch (SmbException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -59,17 +79,12 @@ public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback 
 
     @Override
     public void onRelease() {
-        Log.d(TAG, "closing file: " + file.getFileName());
-        close(file);
-
-        onCloseCallbackOption.ifPresent(Runnable::run);
-    }
-
-    private static void close(AutoCloseable closeable) {
         try {
-            closeable.close();
-        } catch (Exception e) {
-            Log.e("Smb file callback", "could not close resource", e);
+            file.close();
+        } catch (SmbException e) {
+            throw new RuntimeException(e);
+        } finally {
+            onCloseCallbackOption.ifPresent(Runnable::run);
         }
     }
 }
