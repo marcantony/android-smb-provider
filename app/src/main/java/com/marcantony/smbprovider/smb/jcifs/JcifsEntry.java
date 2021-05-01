@@ -21,7 +21,6 @@ public class JcifsEntry implements Entry {
         return Paths.get(smbResource.getName()).getFileName().toString();
     }
 
-    @Override
     public String getFullPath() {
         return smbResource.getLocator().getCanonicalURL();
     }

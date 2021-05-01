@@ -54,7 +54,7 @@ public class JcifsClient implements Client {
             Log.d(TAG, "getting children of: " + uri);
             List<Entry> children = new LinkedList<>();
 
-            SmbFile file = new SmbFile(uri.toString(), SingletonContext.getInstance());
+            SmbFile file = new SmbFile(uri, SingletonContext.getInstance());
             file.children().forEachRemaining(child -> children.add(new JcifsEntry(child)));
             file.close();
 

@@ -18,6 +18,7 @@ import com.marcantony.smbprovider.smb.Client;
 import com.marcantony.smbprovider.smb.EntryStats;
 import com.marcantony.smbprovider.smb.SmbDetails;
 import com.marcantony.smbprovider.smb.jcifs.JcifsClient;
+import com.marcantony.smbprovider.smb.smbj.SmbjClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,11 +54,11 @@ public class SmbProvider extends DocumentsProvider {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_ROOT_PROJECTION);
 
         for (SmbDetails details : detailsManager.getAllDetails()) {
-            String documentId = String.format("//%s/%s", details.hostname, details.share);
+            String rootId = String.format("%s/%s", details.hostname, details.share);
             result.newRow()
-                    .add(DocumentsContract.Root.COLUMN_ROOT_ID, details.share)
-                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, "smb:" + documentId + "/")
-                    .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", documentId))
+                    .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
+                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, rootId + "/")
+                    .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", rootId))
                     .add(DocumentsContract.Root.COLUMN_SUMMARY, details.authDetails.map(ad -> ad.username).orElse("Anonymous"))
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
                     .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
@@ -74,7 +75,7 @@ public class SmbProvider extends DocumentsProvider {
         smbClient.listDir(parentDocumentId).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     result.newRow()
-                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, entry.getFullPath())
+                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, Paths.get(parentDocumentId, entry.getName()).toString())
                             .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, entry.getName())
                             .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.getStats().mimeType)
                             .add(DocumentsContract.Document.COLUMN_SIZE, entry.getStats().size)
@@ -125,8 +126,9 @@ public class SmbProvider extends DocumentsProvider {
         detailsManager = new SmbDetailsManager();
 
         StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        smbClient = new JcifsClient(storageManager, executor);
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        smbClient = new JcifsClient(storageManager, executor);
+        smbClient = new SmbjClient(storageManager);
 
         return true;
     }
