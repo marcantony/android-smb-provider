@@ -9,4 +9,10 @@
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="edit_host">Host (name or IP)</string>
+    <string name="edit_share">Share</string>
+    <string name="edit_username">Username</string>
+    <string name="edit_password">Password</string>
+    <string name="server_save">Save</string>
+    <string name="cancel">Cancel</string>
 </resources>

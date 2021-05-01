@@ -14,7 +14,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AddServerDialogFragment.AddServerDialogListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,9 +48,19 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void showDialog(View view) {
+        AddServerDialogFragment dialog = new AddServerDialogFragment();
+        dialog.show(getSupportFragmentManager(), "AddServerDialogFragment");
+    }
+
     public void openFiles(View view) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("*/*");
         startActivity(intent);
+    }
+
+    @Override
+    public void onSave(ServerInfo info) {
+        Snackbar.make(findViewById(android.R.id.content), info.host, Snackbar.LENGTH_LONG).show();
     }
 }
