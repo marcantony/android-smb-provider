@@ -18,7 +18,6 @@ import com.marcantony.smbprovider.smb.Entry;
 import com.marcantony.smbprovider.smb.EntryStats;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;

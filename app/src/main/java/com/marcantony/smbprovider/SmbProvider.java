@@ -74,8 +74,11 @@ public class SmbProvider extends DocumentsProvider {
         Log.d(TAG, "getting children of: " + parentDocumentId);
         smbClient.listDir(parentDocumentId).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
+                    String fullPath = Paths.get(parentDocumentId, entry.getName()).toString();
+                    String documentId = entry.getStats().mimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR) ?
+                            fullPath + "/" : fullPath;
                     result.newRow()
-                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, Paths.get(parentDocumentId, entry.getName()).toString())
+                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                             .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, entry.getName())
                             .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.getStats().mimeType)
                             .add(DocumentsContract.Document.COLUMN_SIZE, entry.getStats().size)

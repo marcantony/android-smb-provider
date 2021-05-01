@@ -54,7 +54,7 @@ public class JcifsClient implements Client {
             Log.d(TAG, "getting children of: " + uri);
             List<Entry> children = new LinkedList<>();
 
-            SmbFile file = new SmbFile(uri, SingletonContext.getInstance());
+            SmbFile file = new SmbFile("smb://" + uri, SingletonContext.getInstance());
             file.children().forEachRemaining(child -> children.add(new JcifsEntry(child)));
             file.close();
 
@@ -69,7 +69,7 @@ public class JcifsClient implements Client {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new JcifsProxyFileDescriptorCallback(uri, mode, executor),
+                    new JcifsProxyFileDescriptorCallback("smb://" + uri, mode, executor),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {

@@ -4,8 +4,6 @@ import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation;
 import com.marcantony.smbprovider.smb.Entry;
 import com.marcantony.smbprovider.smb.EntryStats;
 
-import java.nio.file.Path;
-
 public class SmbjEntry implements Entry {
 
     private final FileIdBothDirectoryInformation info;
