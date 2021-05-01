@@ -26,18 +26,12 @@ public class JcifsClient implements Client {
 
     private final StorageManager storageManager;
     private final HandlerThread handlerThread;
-    private final ExecutorService executor;
 
-    public JcifsClient(StorageManager storageManager, ExecutorService executor) {
+    public JcifsClient(StorageManager storageManager) {
         if (storageManager == null) {
             throw new NullPointerException("storage manager cannot be null");
         }
         this.storageManager = storageManager;
-
-        if (executor == null) {
-            throw new NullPointerException("executor cannot be null");
-        }
-        this.executor = executor;
 
         handlerThread = new HandlerThread("smb");
         handlerThread.start();
@@ -69,7 +63,7 @@ public class JcifsClient implements Client {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new JcifsProxyFileDescriptorCallback("smb://" + uri, mode, executor),
+                    new JcifsProxyFileDescriptorCallback("smb://" + uri, mode),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {

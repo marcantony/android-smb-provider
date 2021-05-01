@@ -22,8 +22,6 @@ import com.marcantony.smbprovider.smb.smbj.SmbjClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class SmbProvider extends DocumentsProvider {
 
@@ -129,9 +127,8 @@ public class SmbProvider extends DocumentsProvider {
         detailsManager = new SmbDetailsManager();
 
         StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-//        smbClient = new JcifsClient(storageManager, executor);
-        smbClient = new SmbjClient(storageManager);
+        smbClient = new JcifsClient(storageManager);
+//        smbClient = new SmbjClient(storageManager);
 
         return true;
     }

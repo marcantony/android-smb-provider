@@ -5,9 +5,7 @@ import android.system.ErrnoException;
 import android.system.OsConstants;
 import android.util.Log;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.net.MalformedURLException;
 
 import jcifs.SmbConstants;
 import jcifs.context.SingletonContext;
@@ -18,46 +16,43 @@ public class JcifsProxyFileDescriptorCallback extends ProxyFileDescriptorCallbac
 
     private static final String TAG = "smb callback";
 
-    private final Future<SmbRandomAccessFile> file;
+    private final SmbRandomAccessFile file;
 
-    public JcifsProxyFileDescriptorCallback(String url, String mode, ExecutorService executor) {
-        file = executor.submit(() ->
-                new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance()));
+    public JcifsProxyFileDescriptorCallback(String url, String mode) {
+        try {
+            file = new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance());
+        } catch (SmbException | MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public long onGetSize() throws ErrnoException {
         try {
-            return file.get().length();
+            return file.length();
         } catch (SmbException e) {
             throw translateSmbException(e);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
         }
     }
 
     @Override
     public int onRead(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            file.get().seek(offset);
-            return file.get().read(data, 0, size);
+            file.seek(offset);
+            return file.read(data, 0, size);
         } catch (SmbException e) {
             throw translateSmbException(e);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
         }
     }
 
     @Override
     public int onWrite(long offset, int size, byte[] data) throws ErrnoException {
         try {
-            file.get().seek(offset);
-            file.get().write(data, 0, size);
+            file.seek(offset);
+            file.write(data, 0, size);
             return size;
         } catch (SmbException e) {
             throw translateSmbException(e);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -69,8 +64,8 @@ public class JcifsProxyFileDescriptorCallback extends ProxyFileDescriptorCallbac
     @Override
     public void onRelease() {
         try {
-            file.get().close();
-        } catch (SmbException | InterruptedException | ExecutionException e) {
+            file.close();
+        } catch (SmbException e) {
             Log.e(TAG, "got error when trying to close file", e);
         }
     }
