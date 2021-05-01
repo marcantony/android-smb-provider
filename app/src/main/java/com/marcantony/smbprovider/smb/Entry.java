@@ -4,6 +4,7 @@ public interface Entry {
 
     String getName();
     EntryStats getStats();
+    boolean isDirectory();
     void close();
 
 }

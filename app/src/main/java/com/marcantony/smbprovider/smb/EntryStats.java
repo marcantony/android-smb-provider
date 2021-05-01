@@ -1,6 +1,5 @@
 package com.marcantony.smbprovider.smb;
 
-import android.provider.DocumentsContract;
 import android.webkit.MimeTypeMap;
 
 import java.nio.file.Paths;
@@ -28,8 +27,8 @@ public class EntryStats {
         int extensionPos = name.indexOf('.');
 
         if (extensionPos == -1) {
-            // no "." - this is a directory
-            return DocumentsContract.Document.MIME_TYPE_DIR;
+            // no "."
+            return DEFAULT_MIME_TYPE;
         }
 
         String extension = name.substring(extensionPos + 1);

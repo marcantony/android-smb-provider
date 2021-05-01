@@ -31,6 +31,15 @@ public class JcifsEntry implements Entry {
     }
 
     @Override
+    public boolean isDirectory() {
+        try {
+            return smbResource.isDirectory();
+        } catch (CIFSException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void close() {
         smbResource.close();
     }

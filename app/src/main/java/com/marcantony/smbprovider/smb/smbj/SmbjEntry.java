@@ -7,9 +7,11 @@ import com.marcantony.smbprovider.smb.EntryStats;
 public class SmbjEntry implements Entry {
 
     private final FileIdBothDirectoryInformation info;
+    private final boolean isDirectory;
 
-    public SmbjEntry(FileIdBothDirectoryInformation info) {
+    public SmbjEntry(FileIdBothDirectoryInformation info, boolean isDirectory) {
         this.info = info;
+        this.isDirectory = isDirectory;
     }
 
     @Override
@@ -20,6 +22,11 @@ public class SmbjEntry implements Entry {
     @Override
     public EntryStats getStats() {
         return new EntryStats(getName(), info.getEndOfFile(), info.getLastWriteTime().toEpochMillis());
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return isDirectory;
     }
 
     @Override

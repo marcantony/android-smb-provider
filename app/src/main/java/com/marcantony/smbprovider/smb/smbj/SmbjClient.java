@@ -15,7 +15,6 @@ import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 import com.marcantony.smbprovider.smb.Client;
 import com.marcantony.smbprovider.smb.Entry;
-import com.marcantony.smbprovider.smb.EntryStats;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -33,13 +32,12 @@ public class SmbjClient implements Client {
             .withSoTimeout(10, TimeUnit.SECONDS)
             .build();
 
-    private final SMBClient smbClient;
     private final SmbConnectionManager connectionManager;
     private final StorageManager storageManager;
     private final HandlerThread handlerThread;
 
     public SmbjClient(StorageManager storageManager) {
-        this.smbClient = new SMBClient(config);
+        SMBClient smbClient = new SMBClient(config);
         connectionManager = new SmbConnectionManager(smbClient);
 
         if (storageManager == null) {
@@ -52,11 +50,6 @@ public class SmbjClient implements Client {
     }
 
     @Override
-    public EntryStats stat(String uri) {
-        return new EntryStats(uri);
-    }
-
-    @Override
     public Iterable<Entry> listDir(String uri) {
         Path p = Paths.get(uri);
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
@@ -66,10 +59,10 @@ public class SmbjClient implements Client {
         );
 
         DiskShare share = connectionManager.getShare(smbConnectionDetails);
-        Path pathUnderShare = p.getNameCount() <= 2 ? Paths.get("") : p.subpath(2, p.getNameCount());
-        return share.list(pathUnderShare.toString()).stream()
+        String pathUnderShare = p.getNameCount() <= 2 ? "" : p.subpath(2, p.getNameCount()).toString();
+        return share.list(pathUnderShare).stream()
                 .filter(info -> !IGNORED_DOCUMENTS.contains(info.getFileName()))
-                .map(SmbjEntry::new)
+                .map(info -> new SmbjEntry(info, share.folderExists(Paths.get(pathUnderShare, info.getFileName()).toString())))
                 .collect(Collectors.toList());
     }
 

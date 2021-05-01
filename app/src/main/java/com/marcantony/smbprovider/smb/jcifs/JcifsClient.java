@@ -8,13 +8,11 @@ import android.util.Log;
 
 import com.marcantony.smbprovider.smb.Client;
 import com.marcantony.smbprovider.smb.Entry;
-import com.marcantony.smbprovider.smb.EntryStats;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 import jcifs.CIFSException;
 import jcifs.context.SingletonContext;
@@ -35,11 +33,6 @@ public class JcifsClient implements Client {
 
         handlerThread = new HandlerThread("smb");
         handlerThread.start();
-    }
-
-    @Override
-    public EntryStats stat(String uri) {
-        return new EntryStats(uri);
     }
 
     @Override

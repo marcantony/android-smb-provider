@@ -5,13 +5,6 @@ import android.os.ParcelFileDescriptor;
 public interface Client {
 
     /**
-     * Get entry information. Avoid actually opening a file for reading.
-     * @param uri The URI pointing to the entry to read.
-     * @return Stats about the entry.
-     */
-    EntryStats stat(String uri);
-
-    /**
      * List the entries inside a directory.
      * @param uri The directory to list.
      * @return An iterable of the entires inside the directory.

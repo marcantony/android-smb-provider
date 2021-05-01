@@ -73,12 +73,13 @@ public class SmbProvider extends DocumentsProvider {
         smbClient.listDir(parentDocumentId).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     String fullPath = Paths.get(parentDocumentId, entry.getName()).toString();
-                    String documentId = entry.getStats().mimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR) ?
+                    String documentId = entry.isDirectory() ?
                             fullPath + "/" : fullPath;
                     result.newRow()
                             .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                             .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, entry.getName())
-                            .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.getStats().mimeType)
+                            .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.isDirectory() ?
+                                    DocumentsContract.Document.MIME_TYPE_DIR : entry.getStats().mimeType)
                             .add(DocumentsContract.Document.COLUMN_SIZE, entry.getStats().size)
                             .add(DocumentsContract.Document.COLUMN_FLAGS, null)
                             .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, entry.getStats().lastModifiedMillis);
@@ -95,11 +96,13 @@ public class SmbProvider extends DocumentsProvider {
         Path p = Paths.get(documentId);
 
         Log.d(TAG, "querying document: " + "\"" + documentId + "\"");
-        EntryStats stats = smbClient.stat(documentId);
+        EntryStats stats = new EntryStats(documentId);
+        boolean isDirectory = documentId.endsWith("/");
         result.newRow()
                 .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                 .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, p.getFileName().toString())
-                .add(DocumentsContract.Document.COLUMN_MIME_TYPE, stats.mimeType)
+                .add(DocumentsContract.Document.COLUMN_MIME_TYPE, isDirectory ?
+                        DocumentsContract.Document.MIME_TYPE_DIR : stats.mimeType)
                 .add(DocumentsContract.Document.COLUMN_SIZE, stats.size)
                 .add(DocumentsContract.Document.COLUMN_FLAGS, null)
                 .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, stats.lastModifiedMillis);
