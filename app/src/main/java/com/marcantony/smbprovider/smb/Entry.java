@@ -1,7 +1,11 @@
 package com.marcantony.smbprovider.smb;
 
-public interface Entry {
+import java.io.Closeable;
 
+public interface Entry extends Closeable {
 
+    String getName();
+    String getFullPath();
+    EntryStats getStats();
 
 }

@@ -1,44 +1,26 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.smb.jcifs;
 
 import android.os.ProxyFileDescriptorCallback;
 import android.system.ErrnoException;
 import android.system.OsConstants;
 import android.util.Log;
 
-import com.hierynomus.msdtyp.AccessMask;
-import com.hierynomus.mssmb2.SMB2CreateDisposition;
-import com.hierynomus.mssmb2.SMB2ShareAccess;
-import com.hierynomus.smbj.SMBClient;
-import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.connection.Connection;
-import com.hierynomus.smbj.session.Session;
-import com.hierynomus.smbj.share.DiskShare;
-import com.hierynomus.smbj.share.File;
-import com.hierynomus.smbj.share.Share;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.EnumSet;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import jcifs.SmbConstants;
 import jcifs.context.SingletonContext;
 import jcifs.smb.SmbException;
-import jcifs.smb.SmbFile;
 import jcifs.smb.SmbRandomAccessFile;
 
-public class SmbProxyFileDescriptorCallback extends ProxyFileDescriptorCallback {
+public class JcifsProxyFileDescriptorCallback extends ProxyFileDescriptorCallback {
 
     private static final String TAG = "smb callback";
 
     private final Future<SmbRandomAccessFile> file;
 
-    public SmbProxyFileDescriptorCallback(String url, String mode, ExecutorService executor) {
+    public JcifsProxyFileDescriptorCallback(String url, String mode, ExecutorService executor) {
         file = executor.submit(() ->
                 new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance()));
     }

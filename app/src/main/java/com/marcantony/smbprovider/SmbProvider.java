@@ -6,61 +6,27 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Point;
 import android.os.CancellationSignal;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.storage.StorageManager;
 import android.provider.DocumentsContract;
 import android.provider.DocumentsProvider;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 import androidx.annotation.Nullable;
 
-import com.hierynomus.msdtyp.AccessMask;
-import com.hierynomus.msfscc.fileinformation.FileAllInformation;
-import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation;
-import com.hierynomus.mssmb2.SMB2CreateDisposition;
-import com.hierynomus.mssmb2.SMB2ShareAccess;
-import com.hierynomus.smbj.SMBClient;
-import com.hierynomus.smbj.SmbConfig;
-import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.connection.Connection;
-import com.hierynomus.smbj.session.Session;
-import com.hierynomus.smbj.share.DiskShare;
-import com.hierynomus.smbj.share.File;
-import com.hierynomus.smbj.share.Share;
-import com.marcantony.smbprovider.smb.SmbAuthDetails;
+import com.marcantony.smbprovider.smb.Client;
+import com.marcantony.smbprovider.smb.EntryStats;
 import com.marcantony.smbprovider.smb.SmbDetails;
+import com.marcantony.smbprovider.smb.jcifs.JcifsClient;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import jcifs.CIFSException;
-import jcifs.CloseableIterator;
-import jcifs.SmbConstants;
-import jcifs.SmbResource;
-import jcifs.context.SingletonContext;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbRandomAccessFile;
 
 public class SmbProvider extends DocumentsProvider {
 
     private static final String TAG = "SmbProvider";
-
-    private static final String DEFAULT_MIME_TYPE = "application/octet-stream";
-    private static final Set<String> IGNORED_DOCUMENTS = Set.of(".", "..");
 
     private static final String[] DEFAULT_ROOT_PROJECTION = new String[] {
             DocumentsContract.Root.COLUMN_ROOT_ID,
@@ -79,10 +45,8 @@ public class SmbProvider extends DocumentsProvider {
             DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
 
-    private StorageManager storageManager;
-    private HandlerThread handlerThread;
     private SmbDetailsManager detailsManager;
-    private ExecutorService executor;
+    private Client smbClient;
 
     @Override
     public Cursor queryRoots(String[] projection) {
@@ -106,27 +70,17 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        try {
-            Log.d(TAG, "getting children of: " + parentDocumentId);
-            SmbFile file = new SmbFile(parentDocumentId, SingletonContext.getInstance());
-            file.children().forEachRemaining(child -> {
-                Log.d(TAG, "found child document: " + "\"" + child.getName() + "\"");
-                String mimeType = getMimeTypeFromPath(child.getName());
-                try {
+        Log.d(TAG, "getting children of: " + parentDocumentId);
+        smbClient.listDir(parentDocumentId).forEach(entry -> {
+                    Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     result.newRow()
-                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, child.getLocator().getCanonicalURL())
-                            .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, Paths.get(child.getName()).getFileName())
-                            .add(DocumentsContract.Document.COLUMN_MIME_TYPE, mimeType)
-                            .add(DocumentsContract.Document.COLUMN_SIZE, child.length())
+                            .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, entry.getFullPath())
+                            .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, entry.getName())
+                            .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.getStats().mimeType)
+                            .add(DocumentsContract.Document.COLUMN_SIZE, entry.getStats().size)
                             .add(DocumentsContract.Document.COLUMN_FLAGS, null)
-                            .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, child.lastModified());
-                } catch (CIFSException e) {
-                    Log.e(TAG, "could not get details of file: " + child.getName(), e);
-                }
-            });
-        } catch (MalformedURLException | CIFSException e) {
-            throw new RuntimeException(e);
-        }
+                            .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, entry.getStats().lastModifiedMillis);
+        });
 
         return result;
     }
@@ -138,31 +92,16 @@ public class SmbProvider extends DocumentsProvider {
         Path p = Paths.get(documentId);
 
         Log.d(TAG, "querying document: " + "\"" + documentId + "\"");
-        Log.d(TAG, "document has name: " + "\"" + p.getFileName() + "\"");
-        String mimeType = getMimeTypeFromPath(p.getFileName().toString());
+        EntryStats stats = smbClient.stat(documentId);
         result.newRow()
                 .add(DocumentsContract.Document.COLUMN_DOCUMENT_ID, documentId)
                 .add(DocumentsContract.Document.COLUMN_DISPLAY_NAME, p.getFileName().toString())
-                .add(DocumentsContract.Document.COLUMN_MIME_TYPE, mimeType)
-                .add(DocumentsContract.Document.COLUMN_SIZE, null)
+                .add(DocumentsContract.Document.COLUMN_MIME_TYPE, stats.mimeType)
+                .add(DocumentsContract.Document.COLUMN_SIZE, stats.size)
                 .add(DocumentsContract.Document.COLUMN_FLAGS, null)
-                .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, null);
+                .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, stats.lastModifiedMillis);
 
         return result;
-    }
-
-    private String getMimeTypeFromPath(String path) {
-        String name = Paths.get(path).getFileName().toString();
-        int extensionPos = name.indexOf('.');
-
-        if (extensionPos == -1) {
-            // no "." - this is a directory
-            return DocumentsContract.Document.MIME_TYPE_DIR;
-        }
-
-        String extension = name.substring(extensionPos + 1);
-        String guessedMimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-        return guessedMimeType != null ? guessedMimeType : DEFAULT_MIME_TYPE;
     }
 
     @Override
@@ -172,15 +111,7 @@ public class SmbProvider extends DocumentsProvider {
             throw new UnsupportedOperationException("mode " + mode + " not supported");
         }
 
-        try {
-            return storageManager.openProxyFileDescriptor(
-                    ParcelFileDescriptor.parseMode(mode),
-                    new SmbProxyFileDescriptorCallback(documentId, mode, executor),
-                    Handler.createAsync(handlerThread.getLooper())
-            );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return smbClient.openProxyFile(documentId, mode);
     }
 
     @Override
@@ -190,16 +121,13 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
-
-        handlerThread = new HandlerThread("smb");
-        handlerThread.start();
-
         detailsManager = new SmbDetailsManager();
 
-        executor = Executors.newSingleThreadExecutor();
+        StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        smbClient = new JcifsClient(storageManager, executor);
 
-        return storageManager != null;
+        return true;
     }
 
 }
