@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.ViewHolder> {
 
-    private final List<ServerInfo> servers;
+    private List<ServerInfo> servers;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
@@ -42,6 +42,11 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
 
     public ServerInfoAdapter(List<ServerInfo> servers) {
         this.servers = servers;
+    }
+
+    public void setServers(List<ServerInfo> servers) {
+        this.servers = servers;
+        notifyDataSetChanged();
     }
 
     @Override

@@ -8,16 +8,18 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements AddServerDialogFragment.AddServerDialogListener {
 
-    private final List<ServerInfo> servers = new ArrayList<>();
+    private ServerListViewModel serverListViewModel;
     private ServerInfoAdapter serverInfoAdapter;
 
     @Override
@@ -27,12 +29,17 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        serverInfoAdapter = new ServerInfoAdapter(servers);
+        serverInfoAdapter = new ServerInfoAdapter(Collections.emptyList());
         RecyclerView recyclerView = findViewById(R.id.serverList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(serverInfoAdapter);
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
         recyclerView.setHasFixedSize(true);
+
+        serverListViewModel = new ViewModelProvider(this).get(ServerListViewModel.class);
+        final Observer<List<ServerInfo>> serverInfoObserver = serverInfoList ->
+                serverInfoAdapter.setServers(serverInfoList);
+        serverListViewModel.getServers().observe(this, serverInfoObserver);
     }
 
     @Override
@@ -70,7 +77,6 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
 
     @Override
     public void onSave(ServerInfo info) {
-        servers.add(info);
-        serverInfoAdapter.notifyItemInserted(servers.size() - 1);
+        serverListViewModel.addServer(info);
     }
 }
