@@ -35,7 +35,7 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
 
             root.setText(String.format("%s/%s", info.host, share));
             user.setText(userText);
-            switchEnabled.setChecked(true);
+            switchEnabled.setChecked(info.isEnabled());
         }
 
     }
