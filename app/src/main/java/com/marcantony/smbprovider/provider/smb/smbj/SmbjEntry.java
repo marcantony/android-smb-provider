@@ -1,8 +1,8 @@
-package com.marcantony.smbprovider.smb.smbj;
+package com.marcantony.smbprovider.provider.smb.smbj;
 
 import com.hierynomus.msfscc.fileinformation.FileIdBothDirectoryInformation;
-import com.marcantony.smbprovider.smb.Entry;
-import com.marcantony.smbprovider.smb.EntryStats;
+import com.marcantony.smbprovider.provider.smb.Entry;
+import com.marcantony.smbprovider.provider.smb.EntryStats;
 
 public class SmbjEntry implements Entry {
 

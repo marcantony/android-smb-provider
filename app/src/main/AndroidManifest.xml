@@ -23,7 +23,7 @@
         </activity>
 
         <provider
-            android:name="com.marcantony.smbprovider.SmbProvider"
+            android:name="com.marcantony.smbprovider.provider.SmbProvider"
             android:authorities="com.marcantony.smbprovider.documents"
             android:exported="true"
             android:grantUriPermissions="true"

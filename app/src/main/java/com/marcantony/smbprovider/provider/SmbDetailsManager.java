@@ -1,6 +1,6 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.provider;
 
-import com.marcantony.smbprovider.smb.SmbDetails;
+import com.marcantony.smbprovider.provider.smb.SmbDetails;
 
 import java.util.LinkedList;
 import java.util.List;

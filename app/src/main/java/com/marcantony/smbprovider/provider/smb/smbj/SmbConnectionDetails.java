@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.smb.smbj;
+package com.marcantony.smbprovider.provider.smb.smbj;
 
 import com.hierynomus.smbj.auth.AuthenticationContext;
 

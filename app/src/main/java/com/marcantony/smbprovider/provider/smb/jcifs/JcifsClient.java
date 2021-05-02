@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.smb.jcifs;
+package com.marcantony.smbprovider.provider.smb.jcifs;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -6,8 +6,8 @@ import android.os.ParcelFileDescriptor;
 import android.os.storage.StorageManager;
 import android.util.Log;
 
-import com.marcantony.smbprovider.smb.Client;
-import com.marcantony.smbprovider.smb.Entry;
+import com.marcantony.smbprovider.provider.smb.Client;
+import com.marcantony.smbprovider.provider.smb.Entry;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

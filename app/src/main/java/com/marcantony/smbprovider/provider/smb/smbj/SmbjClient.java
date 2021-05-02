@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.smb.smbj;
+package com.marcantony.smbprovider.provider.smb.smbj;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -13,8 +13,8 @@ import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
-import com.marcantony.smbprovider.smb.Client;
-import com.marcantony.smbprovider.smb.Entry;
+import com.marcantony.smbprovider.provider.smb.Client;
+import com.marcantony.smbprovider.provider.smb.Entry;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.provider;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
@@ -14,11 +14,11 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.marcantony.smbprovider.smb.Client;
-import com.marcantony.smbprovider.smb.EntryStats;
-import com.marcantony.smbprovider.smb.SmbDetails;
-import com.marcantony.smbprovider.smb.jcifs.JcifsClient;
-import com.marcantony.smbprovider.smb.smbj.SmbjClient;
+import com.marcantony.smbprovider.R;
+import com.marcantony.smbprovider.provider.smb.Client;
+import com.marcantony.smbprovider.provider.smb.EntryStats;
+import com.marcantony.smbprovider.provider.smb.SmbDetails;
+import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
