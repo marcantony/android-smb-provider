@@ -8,10 +8,17 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.snackbar.Snackbar;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements AddServerDialogFragment.AddServerDialogListener {
+
+    private final List<ServerInfo> servers = new ArrayList<>();
+    private ServerInfoAdapter serverInfoAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +26,13 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        serverInfoAdapter = new ServerInfoAdapter(servers);
+        RecyclerView recyclerView = findViewById(R.id.serverList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(serverInfoAdapter);
+        recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
+        recyclerView.setHasFixedSize(true);
     }
 
     @Override
@@ -56,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
 
     @Override
     public void onSave(ServerInfo info) {
-        Snackbar.make(findViewById(android.R.id.content), info.host, Snackbar.LENGTH_LONG).show();
+        servers.add(info);
+        serverInfoAdapter.notifyItemInserted(servers.size() - 1);
     }
 }
