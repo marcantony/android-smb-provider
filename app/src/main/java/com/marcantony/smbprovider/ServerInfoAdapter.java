@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.marcantony.smbprovider.data.ServerInfo;
+
 import java.util.List;
 
 public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.ViewHolder> {

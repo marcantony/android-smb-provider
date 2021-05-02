@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.marcantony.smbprovider.data.ServerInfo;
 
 public class AddServerDialogFragment extends DialogFragment {
 

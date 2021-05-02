@@ -14,6 +14,9 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.marcantony.smbprovider.data.ServerInfo;
+import com.marcantony.smbprovider.data.ServerInfoRepository;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -36,7 +39,8 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
         recyclerView.setHasFixedSize(true);
 
-        serverListViewModel = new ViewModelProvider(this).get(ServerListViewModel.class);
+        serverListViewModel = new ViewModelProvider(this, new ServerListViewModel.Factory(ServerInfoRepository.getInstance()))
+                .get(ServerListViewModel.class);
         final Observer<List<ServerInfo>> serverInfoObserver = serverInfoList ->
                 serverInfoAdapter.setServers(serverInfoList);
         serverListViewModel.getServers().observe(this, serverInfoObserver);

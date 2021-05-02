@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.data;
 
 public class ServerInfo {
 
