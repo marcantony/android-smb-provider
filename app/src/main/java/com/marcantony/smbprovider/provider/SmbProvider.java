@@ -5,6 +5,7 @@ import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import android.os.storage.StorageManager;
@@ -19,11 +20,14 @@ import com.marcantony.smbprovider.data.ServerInfo;
 import com.marcantony.smbprovider.data.ServerInfoRepository;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
-import com.marcantony.smbprovider.provider.smb.SmbDetails;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class SmbProvider extends DocumentsProvider {
 
@@ -46,14 +50,14 @@ public class SmbProvider extends DocumentsProvider {
             DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
 
-    private ServerInfoRepository serverInfoRepository;
+    private List<ServerInfo> servers = Collections.emptyList();
     private Client smbClient;
 
     @Override
     public Cursor queryRoots(String[] projection) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_ROOT_PROJECTION);
 
-        for (ServerInfo info : serverInfoRepository.getServers()) {
+        for (ServerInfo info : servers) {
             String rootId = String.format("%s/%s", info.host, info.share);
             result.newRow()
                     .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
@@ -129,7 +133,12 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        serverInfoRepository = ServerInfoRepository.getInstance();
+        ServerInfoRepository serverInfoRepository = ServerInfoRepository.getInstance(getContext());
+        serverInfoRepository.getEnabledServers().subscribeOn(Schedulers.io()).subscribe(servers -> {
+            this.servers = servers;
+            Uri rootsUri = DocumentsContract.buildRootsUri("com.marcantony.smbprovider.documents");
+            getContext().getContentResolver().notifyChange(rootsUri, null);
+        });
 
         StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
         smbClient = new JcifsClient(storageManager);

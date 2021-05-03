@@ -2,7 +2,7 @@ package com.marcantony.smbprovider;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.LiveDataReactiveStreams;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -13,13 +13,12 @@ import java.util.List;
 
 public class ServerListViewModel extends ViewModel {
 
-    private final MutableLiveData<List<ServerInfo>> servers;
+    private final LiveData<List<ServerInfo>> servers;
     private final ServerInfoRepository repository;
 
     public ServerListViewModel(ServerInfoRepository repository) {
         this.repository = repository;
-        servers = new MutableLiveData<>();
-        loadServers();
+        servers = LiveDataReactiveStreams.fromPublisher(repository.getServers());
     }
 
     public LiveData<List<ServerInfo>> getServers() {
@@ -28,11 +27,6 @@ public class ServerListViewModel extends ViewModel {
 
     public void addServer(ServerInfo info) {
         repository.addServer(info);
-        loadServers();
-    }
-
-    private void loadServers() {
-        servers.setValue(repository.getServers());
     }
 
     public static class Factory implements ViewModelProvider.Factory {

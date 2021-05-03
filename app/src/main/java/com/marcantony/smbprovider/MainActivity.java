@@ -39,7 +39,8 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
         recyclerView.setHasFixedSize(true);
 
-        serverListViewModel = new ViewModelProvider(this, new ServerListViewModel.Factory(ServerInfoRepository.getInstance()))
+        serverListViewModel = new ViewModelProvider(this,
+                new ServerListViewModel.Factory(ServerInfoRepository.getInstance(getApplicationContext())))
                 .get(ServerListViewModel.class);
         final Observer<List<ServerInfo>> serverInfoObserver = serverInfoList ->
                 serverInfoAdapter.setServers(serverInfoList);

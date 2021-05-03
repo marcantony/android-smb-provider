@@ -1,8 +1,14 @@
 package com.marcantony.smbprovider.data;
 
+import androidx.annotation.NonNull;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+@Entity
 public class ServerInfo {
 
-    public final String host;
+    @PrimaryKey(autoGenerate = true) public int id;
+    @NonNull public final String host;
     public final String share;
     public final String username;
     public final String password;

@@ -1,33 +1,39 @@
 package com.marcantony.smbprovider.data;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import android.content.Context;
+
 import java.util.List;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 public class ServerInfoRepository {
 
-    private final List<ServerInfo> servers;
+    private final ServerInfoDao serverInfoDao;
 
-    public ServerInfoRepository() {
-        this.servers = new ArrayList<>();
-        servers.add(new ServerInfo("raspberrypi", "Media", null, null));
-        servers.add(new ServerInfo("raspberrypi", "foo", null, null));
+    public ServerInfoRepository(ServerInfoDao serverInfoDao) {
+        this.serverInfoDao = serverInfoDao;
     }
 
     private static ServerInfoRepository instance;
-    public static ServerInfoRepository getInstance() {
+    public static ServerInfoRepository getInstance(Context context) {
         if (instance == null) {
-            instance = new ServerInfoRepository();
+            AppDatabase db = AppDatabase.getInstance(context);
+            instance = new ServerInfoRepository(db.serverInfoDao());
         }
         return instance;
     }
 
-    public List<ServerInfo> getServers() {
-        return Collections.unmodifiableList(servers);
+    public Flowable<List<ServerInfo>> getServers() {
+        return serverInfoDao.getAll();
+    }
+
+    public Flowable<List<ServerInfo>> getEnabledServers() {
+        return serverInfoDao.getEnabled();
     }
 
     public void addServer(ServerInfo info) {
-        servers.add(info);
+        serverInfoDao.insert(info).subscribeOn(Schedulers.io()).subscribe();
     }
 
 }
