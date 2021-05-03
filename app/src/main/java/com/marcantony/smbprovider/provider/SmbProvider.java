@@ -15,6 +15,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.marcantony.smbprovider.R;
+import com.marcantony.smbprovider.data.ServerInfo;
+import com.marcantony.smbprovider.data.ServerInfoRepository;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.SmbDetails;
@@ -44,20 +46,20 @@ public class SmbProvider extends DocumentsProvider {
             DocumentsContract.Document.COLUMN_LAST_MODIFIED
     };
 
-    private SmbDetailsManager detailsManager;
+    private ServerInfoRepository serverInfoRepository;
     private Client smbClient;
 
     @Override
     public Cursor queryRoots(String[] projection) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_ROOT_PROJECTION);
 
-        for (SmbDetails details : detailsManager.getAllDetails()) {
-            String rootId = String.format("%s/%s", details.hostname, details.share);
+        for (ServerInfo info : serverInfoRepository.getServers()) {
+            String rootId = String.format("%s/%s", info.host, info.share);
             result.newRow()
                     .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
                     .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, rootId + "/")
                     .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", rootId))
-                    .add(DocumentsContract.Root.COLUMN_SUMMARY, details.authDetails.map(ad -> ad.username).orElse("Anonymous"))
+                    .add(DocumentsContract.Root.COLUMN_SUMMARY, info.username != null ? info.username : "Anonymous")
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
                     .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
         }
@@ -127,7 +129,7 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        detailsManager = new SmbDetailsManager();
+        serverInfoRepository = ServerInfoRepository.getInstance();
 
         StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
         smbClient = new JcifsClient(storageManager);
