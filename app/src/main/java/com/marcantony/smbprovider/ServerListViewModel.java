@@ -29,6 +29,14 @@ public class ServerListViewModel extends ViewModel {
         repository.addServer(info);
     }
 
+    public void updateServer(ServerInfo info) {
+        repository.updateServer(info);
+    }
+
+    public void deleteServer(ServerInfo info) {
+        repository.deleteServer(info);
+    }
+
     public static class Factory implements ViewModelProvider.Factory {
 
         private final ServerInfoRepository repository;

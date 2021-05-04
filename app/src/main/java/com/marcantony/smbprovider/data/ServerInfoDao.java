@@ -1,8 +1,10 @@
 package com.marcantony.smbprovider.data;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -23,5 +25,11 @@ public interface ServerInfoDao {
 
     @Insert
     Completable insert(ServerInfo server);
+
+    @Update
+    Completable update(ServerInfo server);
+
+    @Delete
+    Completable delete(ServerInfo server);
 
 }

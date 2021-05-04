@@ -40,4 +40,12 @@ public class ServerInfoRepository {
         serverInfoDao.insert(info).subscribeOn(Schedulers.io()).subscribe();
     }
 
+    public void updateServer(ServerInfo info) {
+        serverInfoDao.update(info).subscribeOn(Schedulers.io()).subscribe();
+    }
+
+    public void deleteServer(ServerInfo info) {
+        serverInfoDao.delete(info).subscribeOn(Schedulers.io()).subscribe();
+    }
+
 }

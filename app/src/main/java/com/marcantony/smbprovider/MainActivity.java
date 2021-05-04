@@ -32,19 +32,20 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        serverInfoAdapter = new ServerInfoAdapter(Collections.emptyList());
-        RecyclerView recyclerView = findViewById(R.id.serverList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(serverInfoAdapter);
-        recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
-        recyclerView.setHasFixedSize(true);
-
         serverListViewModel = new ViewModelProvider(this,
                 new ServerListViewModel.Factory(ServerInfoRepository.getInstance(getApplicationContext())))
                 .get(ServerListViewModel.class);
         final Observer<List<ServerInfo>> serverInfoObserver = serverInfoList ->
                 serverInfoAdapter.setServers(serverInfoList);
         serverListViewModel.getServers().observe(this, serverInfoObserver);
+
+        serverInfoAdapter = new ServerInfoAdapter(Collections.emptyList(), ((info) ->
+                serverListViewModel.updateServer(info)));
+        RecyclerView recyclerView = findViewById(R.id.serverList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(serverInfoAdapter);
+        recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(), DividerItemDecoration.VERTICAL));
+        recyclerView.setHasFixedSize(true);
     }
 
     @Override

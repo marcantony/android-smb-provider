@@ -15,20 +15,33 @@ import java.util.List;
 
 public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.ViewHolder> {
 
+    public interface ServerStatusListener {
+        void onServerEdited(ServerInfo info);
+    }
+
     private List<ServerInfo> servers;
+    private final ServerStatusListener listener;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView root;
         private final TextView user;
         private final Switch switchEnabled;
+        private ServerInfo info;
 
-        public ViewHolder(View view) {
+        public ViewHolder(View view, ServerStatusListener listener) {
             super(view);
 
             root = view.findViewById(R.id.textViewRoot);
             user = view.findViewById(R.id.textViewUser);
             switchEnabled = view.findViewById(R.id.switchServerEnabled);
+
+            switchEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (info != null) {
+                    info.setEnabled(isChecked);
+                    listener.onServerEdited(info);
+                }
+            });
         }
 
         public void bindData(ServerInfo info) {
@@ -38,12 +51,14 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
             root.setText(String.format("%s/%s", info.host, share));
             user.setText(userText);
             switchEnabled.setChecked(info.isEnabled());
+            this.info = info;
         }
 
     }
 
-    public ServerInfoAdapter(List<ServerInfo> servers) {
+    public ServerInfoAdapter(List<ServerInfo> servers, ServerStatusListener listener) {
         this.servers = servers;
+        this.listener = listener;
     }
 
     public void setServers(List<ServerInfo> servers) {
@@ -61,7 +76,7 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(viewType, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, listener);
     }
 
     @Override
