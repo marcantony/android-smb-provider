@@ -11,6 +11,8 @@ import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
+import com.hierynomus.smbj.connection.Connection;
+import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 import com.marcantony.smbprovider.provider.ServerAuthentication;
@@ -35,13 +37,12 @@ public class SmbjClient implements Client {
             .withSoTimeout(10, TimeUnit.SECONDS)
             .build();
 
-    private final SmbConnectionManager connectionManager;
     private final StorageManager storageManager;
     private final HandlerThread handlerThread;
+    private final SMBClient smbClient;
 
     public SmbjClient(StorageManager storageManager) {
-        SMBClient smbClient = new SMBClient(config);
-        connectionManager = new SmbConnectionManager(smbClient);
+        smbClient = new SMBClient(config);
 
         if (storageManager == null) {
             throw new NullPointerException("storage manager cannot be null");
@@ -54,55 +55,38 @@ public class SmbjClient implements Client {
 
     @Override
     public Iterable<Entry> listDir(URI uri) {
-        Path p;
-        try {
-            p = Paths.get(new URI("file", null, uri.getPath(), null));
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("this shouldn't happen", e);
-        }
-
-        SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
-                uri.getHost(),
-                getAuthenticationContext(uri),
-                p.getName(0).toString()
-        );
-
-        DiskShare share = connectionManager.getShare(smbConnectionDetails);
+        Path p = getPath(uri);
         String pathUnderShare = p.getNameCount() <= 1 ? "" : p.subpath(1, p.getNameCount()).toString();
-        return share.list(pathUnderShare).stream()
-                .filter(info -> !IGNORED_DOCUMENTS.contains(info.getFileName()))
-                .map(info -> new SmbjEntry(info, share.folderExists(Paths.get(pathUnderShare, info.getFileName()).toString())))
-                .collect(Collectors.toList());
+
+        try (Connection c = smbClient.connect(uri.getHost())) {
+            try (Session session = c.authenticate(getAuthenticationContext(uri))) {
+                try (DiskShare share = (DiskShare) session.connectShare(p.getName(0).toString())) {
+                    return share.list(pathUnderShare).stream()
+                            .filter(info -> !IGNORED_DOCUMENTS.contains(info.getFileName()))
+                            .map(info -> new SmbjEntry(info, share.folderExists(Paths.get(pathUnderShare, info.getFileName()).toString())))
+                            .collect(Collectors.toList());
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public ParcelFileDescriptor openProxyFile(URI uri, String mode) {
-        Path p;
-        try {
-            p = Paths.get(new URI("file", null, uri.getPath(), null));
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("this shouldn't happen", e);
-        }
+        Path p = getPath(uri);
+        String pathUnderShare = p.getNameCount() <= 1 ? "" : p.subpath(1, p.getNameCount()).toString();
 
-        SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
-                uri.getHost(),
-                getAuthenticationContext(uri),
-                p.getName(0).toString()
-        );
-
-        Path pathUnderShare = p.getNameCount() <= 1 ? Paths.get("") : p.subpath(1, p.getNameCount());
-        File file = connectionManager.getShare(smbConnectionDetails).openFile(
-                pathUnderShare.toString(),
-                EnumSet.of(AccessMask.FILE_READ_DATA),
-                null,
-                SMB2ShareAccess.ALL,
-                SMB2CreateDisposition.FILE_OPEN,
-                null
-        );
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new SmbjProxyFileDescriptorCallback(file),
+                    new SmbjProxyFileDescriptorCallback(
+                            smbClient,
+                            uri.getHost(),
+                            p.getName(0).toString(),
+                            pathUnderShare,
+                            getAuthenticationContext(uri)
+                    ),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {
@@ -125,5 +109,14 @@ public class SmbjClient implements Client {
         } else {
             throw new RuntimeException("URI user info improperly formatted");
         }
+    }
+
+    private Path getPath(URI uri) {
+        try {
+            return Paths.get(new URI("file", null, uri.getPath(), null));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("this shouldn't happen", e);
+        }
+
     }
 }
