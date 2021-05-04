@@ -19,6 +19,7 @@ import com.marcantony.smbprovider.provider.smb.Entry;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
@@ -53,15 +54,21 @@ public class SmbjClient implements Client {
 
     @Override
     public Iterable<Entry> listDir(URI uri) {
-        Path p = Paths.get(uri);
+        Path p;
+        try {
+            p = Paths.get(new URI("file", null, uri.getPath(), null));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("this shouldn't happen", e);
+        }
+
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
-                p.getName(0).toString(),
-                AuthenticationContext.anonymous(),
-                p.getName(1).toString()
+                uri.getHost(),
+                getAuthenticationContext(uri),
+                p.getName(0).toString()
         );
 
         DiskShare share = connectionManager.getShare(smbConnectionDetails);
-        String pathUnderShare = p.getNameCount() <= 2 ? "" : p.subpath(2, p.getNameCount()).toString();
+        String pathUnderShare = p.getNameCount() <= 1 ? "" : p.subpath(1, p.getNameCount()).toString();
         return share.list(pathUnderShare).stream()
                 .filter(info -> !IGNORED_DOCUMENTS.contains(info.getFileName()))
                 .map(info -> new SmbjEntry(info, share.folderExists(Paths.get(pathUnderShare, info.getFileName()).toString())))
@@ -70,14 +77,20 @@ public class SmbjClient implements Client {
 
     @Override
     public ParcelFileDescriptor openProxyFile(URI uri, String mode) {
-        Path p = Paths.get(uri);
+        Path p;
+        try {
+            p = Paths.get(new URI("file", null, uri.getPath(), null));
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("this shouldn't happen", e);
+        }
+
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
-                p.getName(0).toString(),
-                AuthenticationContext.anonymous(),
-                p.getName(1).toString()
+                uri.getHost(),
+                getAuthenticationContext(uri),
+                p.getName(0).toString()
         );
 
-        Path pathUnderShare = p.getNameCount() <= 2 ? Paths.get("") : p.subpath(2, p.getNameCount());
+        Path pathUnderShare = p.getNameCount() <= 1 ? Paths.get("") : p.subpath(1, p.getNameCount());
         File file = connectionManager.getShare(smbConnectionDetails).openFile(
                 pathUnderShare.toString(),
                 EnumSet.of(AccessMask.FILE_READ_DATA),
@@ -94,6 +107,23 @@ public class SmbjClient implements Client {
             );
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private AuthenticationContext getAuthenticationContext(URI uri) {
+        String userInfo = uri.getUserInfo();
+        if (userInfo == null) {
+            return AuthenticationContext.anonymous();
+        }
+
+        String[] parts = userInfo.split(":");
+
+        if (parts.length == 1) {
+            return new AuthenticationContext(parts[0], new char[] {}, null);
+        } else if (parts.length == 2) {
+            return new AuthenticationContext(parts[0], parts[1].toCharArray(), null);
+        } else {
+            throw new RuntimeException("URI user info improperly formatted");
         }
     }
 }
