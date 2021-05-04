@@ -6,17 +6,16 @@ import android.os.ParcelFileDescriptor;
 import android.os.storage.StorageManager;
 import android.util.Log;
 
-import com.marcantony.smbprovider.provider.ServerAuthentication;
+import com.marcantony.smbprovider.provider.smb.AsyncProxyFileDescriptorCallback;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.Entry;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import jcifs.CIFSContext;
 import jcifs.CIFSException;
@@ -30,12 +29,15 @@ public class JcifsClient implements Client {
 
     private final StorageManager storageManager;
     private final HandlerThread handlerThread;
+    private final ExecutorService executor;
 
-    public JcifsClient(StorageManager storageManager) {
+    public JcifsClient(StorageManager storageManager, ExecutorService executor) {
         if (storageManager == null) {
             throw new NullPointerException("storage manager cannot be null");
         }
         this.storageManager = storageManager;
+
+        this.executor = executor;
 
         handlerThread = new HandlerThread("smb");
         handlerThread.start();
@@ -62,7 +64,10 @@ public class JcifsClient implements Client {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new JcifsProxyFileDescriptorCallback(parseUri(uri), mode, getContext(uri)),
+                    new AsyncProxyFileDescriptorCallback(() ->
+                            new JcifsProxyFileDescriptorCallback(parseUri(uri), mode, getContext(uri)),
+                            executor
+                    ),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {

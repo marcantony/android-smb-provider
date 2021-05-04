@@ -21,6 +21,7 @@ import com.marcantony.smbprovider.data.ServerInfoRepository;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
+import com.marcantony.smbprovider.provider.smb.smbj.SmbjClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -147,8 +150,9 @@ public class SmbProvider extends DocumentsProvider {
         });
 
         StorageManager storageManager = (StorageManager) getContext().getSystemService(Context.STORAGE_SERVICE);
-        smbClient = new JcifsClient(storageManager);
-//        smbClient = new SmbjClient(storageManager);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        smbClient = new JcifsClient(storageManager, executorService);
+//        smbClient = new SmbjClient(storageManager, executorService);
 
         return true;
     }

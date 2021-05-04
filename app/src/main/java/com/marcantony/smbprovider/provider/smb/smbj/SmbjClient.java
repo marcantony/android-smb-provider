@@ -5,17 +5,13 @@ import android.os.HandlerThread;
 import android.os.ParcelFileDescriptor;
 import android.os.storage.StorageManager;
 
-import com.hierynomus.msdtyp.AccessMask;
-import com.hierynomus.mssmb2.SMB2CreateDisposition;
-import com.hierynomus.mssmb2.SMB2ShareAccess;
 import com.hierynomus.smbj.SMBClient;
 import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
-import com.hierynomus.smbj.share.File;
-import com.marcantony.smbprovider.provider.ServerAuthentication;
+import com.marcantony.smbprovider.provider.smb.AsyncProxyFileDescriptorCallback;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.Entry;
 
@@ -24,8 +20,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -40,14 +36,17 @@ public class SmbjClient implements Client {
     private final StorageManager storageManager;
     private final HandlerThread handlerThread;
     private final SMBClient smbClient;
+    private final ExecutorService executor;
 
-    public SmbjClient(StorageManager storageManager) {
+    public SmbjClient(StorageManager storageManager, ExecutorService executor) {
         smbClient = new SMBClient(config);
 
         if (storageManager == null) {
             throw new NullPointerException("storage manager cannot be null");
         }
         this.storageManager = storageManager;
+
+        this.executor = executor;
 
         handlerThread = new HandlerThread("smb");
         handlerThread.start();
@@ -80,12 +79,14 @@ public class SmbjClient implements Client {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new SmbjProxyFileDescriptorCallback(
-                            smbClient,
-                            uri.getHost(),
-                            p.getName(0).toString(),
-                            pathUnderShare,
-                            getAuthenticationContext(uri)
+                    new AsyncProxyFileDescriptorCallback(() ->
+                            new SmbjProxyFileDescriptorCallback(
+                                    smbClient,
+                                    uri.getHost(),
+                                    p.getName(0).toString(),
+                                    pathUnderShare,
+                                    getAuthenticationContext(uri)
+                            ), executor
                     ),
                     Handler.createAsync(handlerThread.getLooper())
             );
