@@ -32,6 +32,10 @@ public class ServerInfoRepository {
         return serverInfoDao.getEnabled();
     }
 
+    public ServerInfo getServerInfo(int id) {
+        return serverInfoDao.getById(id);
+    }
+
     public void addServer(ServerInfo info) {
         serverInfoDao.insert(info).subscribeOn(Schedulers.io()).subscribe();
     }

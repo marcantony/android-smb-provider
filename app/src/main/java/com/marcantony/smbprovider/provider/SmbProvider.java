@@ -52,6 +52,7 @@ public class SmbProvider extends DocumentsProvider {
 
     private List<ServerInfo> servers = Collections.emptyList();
     private Client smbClient;
+    private ServerInfoRepository serverInfoRepository;
 
     @Override
     public Cursor queryRoots(String[] projection) {
@@ -61,7 +62,7 @@ public class SmbProvider extends DocumentsProvider {
             String rootId = String.format("%s/%s", info.host, info.share);
             result.newRow()
                     .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
-                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, rootId + "/")
+                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, info.id + "/")
                     .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", rootId))
                     .add(DocumentsContract.Root.COLUMN_SUMMARY, info.username != null ? info.username : "Anonymous")
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
@@ -75,8 +76,10 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        Log.d(TAG, "getting children of: " + parentDocumentId);
-        smbClient.listDir(parentDocumentId).forEach(entry -> {
+        String path = documentIdToSmbUri(parentDocumentId);
+
+        Log.d(TAG, "getting children of: " + path);
+        smbClient.listDir(path, getAuthentication(parentDocumentId)).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     String fullPath = Paths.get(parentDocumentId, entry.getName()).toString();
                     String documentId = entry.isDirectory() ?
@@ -118,12 +121,13 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public ParcelFileDescriptor openDocument(String documentId, String mode, @Nullable CancellationSignal signal) {
-        Log.d(TAG, "opening document: " + "\"" + documentId + "\"");
+        String path = documentIdToSmbUri(documentId);
+        Log.d(TAG, "opening document: " + "\"" + path + "\"");
         if (!mode.equals("r")) {
             throw new UnsupportedOperationException("mode " + mode + " not supported");
         }
 
-        return smbClient.openProxyFile(documentId, mode);
+        return smbClient.openProxyFile(path, getAuthentication(documentId), mode);
     }
 
     @Override
@@ -133,7 +137,7 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        ServerInfoRepository serverInfoRepository = ServerInfoRepository.getInstance(getContext());
+        serverInfoRepository = ServerInfoRepository.getInstance(getContext());
         serverInfoRepository.getEnabledServers().subscribeOn(Schedulers.io()).subscribe(servers -> {
             this.servers = servers;
             Uri rootsUri = DocumentsContract.buildRootsUri("com.marcantony.smbprovider.documents");
@@ -145,6 +149,38 @@ public class SmbProvider extends DocumentsProvider {
 //        smbClient = new SmbjClient(storageManager);
 
         return true;
+    }
+
+    private String documentIdToSmbUri(String documentId) {
+        Path p = Paths.get(documentId);
+        int serverInfoId = Integer.parseInt(p.getName(0).toString());
+        ServerInfo info = serverInfoRepository.getServerInfo(serverInfoId);
+
+        String dir = p.getNameCount() > 1 ? p.subpath(1, p.getNameCount()).toString() : null;
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(info.host);
+        if (info.share != null) {
+            builder.append('/').append(info.share);
+        }
+        if (dir != null) {
+            builder.append('/').append(dir);
+        }
+        if (documentId.endsWith("/")) {
+            builder.append('/');
+        }
+
+        String finalPath = builder.toString();
+        Log.d(TAG, "built path: " + finalPath);
+        return finalPath;
+    }
+
+    private ServerAuthentication getAuthentication(String documentId) {
+        Path p = Paths.get(documentId);
+        int serverInfoId = Integer.parseInt(p.getName(0).toString());
+        ServerInfo info = serverInfoRepository.getServerInfo(serverInfoId);
+
+        return new ServerAuthentication(info.username, info.password);
     }
 
 }

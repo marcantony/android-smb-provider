@@ -7,6 +7,7 @@ import android.util.Log;
 
 import java.net.MalformedURLException;
 
+import jcifs.CIFSContext;
 import jcifs.SmbConstants;
 import jcifs.context.SingletonContext;
 import jcifs.smb.SmbException;
@@ -18,9 +19,9 @@ public class JcifsProxyFileDescriptorCallback extends ProxyFileDescriptorCallbac
 
     private final SmbRandomAccessFile file;
 
-    public JcifsProxyFileDescriptorCallback(String url, String mode) {
+    public JcifsProxyFileDescriptorCallback(String url, String mode, CIFSContext context) {
         try {
-            file = new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, SingletonContext.getInstance());
+            file = new SmbRandomAccessFile(url, mode, SmbConstants.DEFAULT_SHARING, context);
         } catch (SmbException | MalformedURLException e) {
             throw new RuntimeException(e);
         }

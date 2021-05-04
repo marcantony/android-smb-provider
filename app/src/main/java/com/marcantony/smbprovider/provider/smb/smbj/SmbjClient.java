@@ -13,6 +13,7 @@ import com.hierynomus.smbj.SmbConfig;
 import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
+import com.marcantony.smbprovider.provider.ServerAuthentication;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.Entry;
 
@@ -50,7 +51,7 @@ public class SmbjClient implements Client {
     }
 
     @Override
-    public Iterable<Entry> listDir(String uri) {
+    public Iterable<Entry> listDir(String uri, ServerAuthentication auth) {
         Path p = Paths.get(uri);
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
                 p.getName(0).toString(),
@@ -67,7 +68,7 @@ public class SmbjClient implements Client {
     }
 
     @Override
-    public ParcelFileDescriptor openProxyFile(String uri, String mode) {
+    public ParcelFileDescriptor openProxyFile(String uri, ServerAuthentication auth, String mode) {
         Path p = Paths.get(uri);
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
                 p.getName(0).toString(),
