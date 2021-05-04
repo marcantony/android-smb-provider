@@ -13,6 +13,7 @@ import com.marcantony.smbprovider.provider.smb.Entry;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,12 +42,12 @@ public class JcifsClient implements Client {
     }
 
     @Override
-    public Iterable<Entry> listDir(String uri, ServerAuthentication auth) {
+    public Iterable<Entry> listDir(URI uri) {
         try {
             Log.d(TAG, "getting children of: " + uri);
             List<Entry> children = new LinkedList<>();
 
-            SmbFile file = new SmbFile("smb://" + uri, getContext(auth));
+            SmbFile file = new SmbFile(parseUri(uri), getContext(uri));
             file.children().forEachRemaining(child -> children.add(new JcifsEntry(child)));
             file.close();
 
@@ -57,11 +58,11 @@ public class JcifsClient implements Client {
     }
 
     @Override
-    public ParcelFileDescriptor openProxyFile(String uri, ServerAuthentication auth, String mode) {
+    public ParcelFileDescriptor openProxyFile(URI uri, String mode) {
         try {
             return storageManager.openProxyFileDescriptor(
                     ParcelFileDescriptor.parseMode(mode),
-                    new JcifsProxyFileDescriptorCallback("smb://" + uri, mode, getContext(auth)),
+                    new JcifsProxyFileDescriptorCallback(parseUri(uri), mode, getContext(uri)),
                     Handler.createAsync(handlerThread.getLooper())
             );
         } catch (IOException e) {
@@ -69,18 +70,40 @@ public class JcifsClient implements Client {
         }
     }
 
-    private CIFSContext getContext(ServerAuthentication auth) {
+    private String parseUri(URI uri) {
+        StringBuilder sb = new StringBuilder();
+        sb
+                .append(uri.getScheme())
+                .append("://")
+                .append(uri.getHost());
+
+        if (uri.getPort() != -1) {
+            sb.append(':').append(uri.getPort());
+        }
+
+        if (uri.getPath() != null) {
+            sb.append(uri.getPath());
+        } else {
+            sb.append('/');
+        }
+
+        return sb.toString();
+    }
+
+    private CIFSContext getContext(URI uri) {
+        String userInfo = uri.getUserInfo();
+
         CIFSContext baseContext = SingletonContext.getInstance();
-        return auth.username == null ? baseContext.withAnonymousCredentials() :
-                baseContext.withCredentials(new DumbNtlmPasswordAuthenticator(auth.username, auth.password));
+        return userInfo == null ? baseContext.withAnonymousCredentials() :
+                baseContext.withCredentials(new DumbNtlmPasswordAuthenticator(userInfo));
     }
 
     private static class DumbNtlmPasswordAuthenticator extends NtlmPasswordAuthenticator {
-        public DumbNtlmPasswordAuthenticator(String username, String password) {
+        public DumbNtlmPasswordAuthenticator(String userInfo) {
             // Call a protected constructor in NtlmPasswordAuthenticator because the exposed
             // one tries to be "too" smart and parse a domain from the username.
             // This ends up breaking functionality for usernames with `@` in them.
-            super(null, null, username, password, null);
+            super(userInfo, null, null, null, null);
         }
     }
 }

@@ -22,6 +22,8 @@ import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -76,10 +78,10 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        String path = documentIdToSmbUri(parentDocumentId);
+        URI uri = documentIdToUri(parentDocumentId);
 
-        Log.d(TAG, "getting children of: " + path);
-        smbClient.listDir(path, getAuthentication(parentDocumentId)).forEach(entry -> {
+        Log.d(TAG, "getting children of: " + uri.toASCIIString());
+        smbClient.listDir(uri).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     String fullPath = Paths.get(parentDocumentId, entry.getName()).toString();
                     String documentId = entry.isDirectory() ?
@@ -121,13 +123,13 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public ParcelFileDescriptor openDocument(String documentId, String mode, @Nullable CancellationSignal signal) {
-        String path = documentIdToSmbUri(documentId);
-        Log.d(TAG, "opening document: " + "\"" + path + "\"");
+        URI uri = documentIdToUri(documentId);
+        Log.d(TAG, "opening document: " + "\"" + uri.toASCIIString() + "\"");
         if (!mode.equals("r")) {
             throw new UnsupportedOperationException("mode " + mode + " not supported");
         }
 
-        return smbClient.openProxyFile(path, getAuthentication(documentId), mode);
+        return smbClient.openProxyFile(uri, mode);
     }
 
     @Override
@@ -151,36 +153,42 @@ public class SmbProvider extends DocumentsProvider {
         return true;
     }
 
-    private String documentIdToSmbUri(String documentId) {
+    private URI documentIdToUri(String documentId) {
         Path p = Paths.get(documentId);
         int serverInfoId = Integer.parseInt(p.getName(0).toString());
         ServerInfo info = serverInfoRepository.getServerInfo(serverInfoId);
 
-        String dir = p.getNameCount() > 1 ? p.subpath(1, p.getNameCount()).toString() : null;
+        String userInfo = getUserInfo(info);
+        String host = info.host;
+        String path = getUriPath(info, documentId);
 
-        StringBuilder builder = new StringBuilder();
-        builder.append(info.host);
-        if (info.share != null) {
-            builder.append('/').append(info.share);
+        try {
+            return new URI("smb", userInfo, host, -1, path, null, null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("could not build document URI", e);
         }
-        if (dir != null) {
-            builder.append('/').append(dir);
-        }
-        if (documentId.endsWith("/")) {
-            builder.append('/');
-        }
-
-        String finalPath = builder.toString();
-        Log.d(TAG, "built path: " + finalPath);
-        return finalPath;
     }
 
-    private ServerAuthentication getAuthentication(String documentId) {
-        Path p = Paths.get(documentId);
-        int serverInfoId = Integer.parseInt(p.getName(0).toString());
-        ServerInfo info = serverInfoRepository.getServerInfo(serverInfoId);
+    private String getUserInfo(ServerInfo info) {
+        if (info.username == null) return null;
 
-        return new ServerAuthentication(info.username, info.password);
+        StringBuilder sb = new StringBuilder();
+        sb.append(info.username);
+
+        if (info.password != null) {
+            sb.append(':').append(info.password);
+        }
+        return sb.toString();
+    }
+
+    private String getUriPath(ServerInfo info, String documentId) {
+        Path p = Paths.get(documentId);
+
+        Path dirPath = p.getNameCount() > 1 ? p.subpath(1, p.getNameCount()) : Paths.get("");
+        Path sharePath = Paths.get(info.share == null ? "" : info.share);
+        String finalPath = sharePath.resolve(dirPath).toString();
+
+        return "/" + finalPath + (documentId.endsWith("/") ? "/" : "");
     }
 
 }

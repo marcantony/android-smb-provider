@@ -18,6 +18,7 @@ import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.Entry;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
@@ -51,7 +52,7 @@ public class SmbjClient implements Client {
     }
 
     @Override
-    public Iterable<Entry> listDir(String uri, ServerAuthentication auth) {
+    public Iterable<Entry> listDir(URI uri) {
         Path p = Paths.get(uri);
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
                 p.getName(0).toString(),
@@ -68,7 +69,7 @@ public class SmbjClient implements Client {
     }
 
     @Override
-    public ParcelFileDescriptor openProxyFile(String uri, ServerAuthentication auth, String mode) {
+    public ParcelFileDescriptor openProxyFile(URI uri, String mode) {
         Path p = Paths.get(uri);
         SmbConnectionDetails smbConnectionDetails = new SmbConnectionDetails(
                 p.getName(0).toString(),
