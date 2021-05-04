@@ -22,6 +22,8 @@ import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -52,6 +54,7 @@ public class SmbProvider extends DocumentsProvider {
 
     private List<ServerInfo> servers = Collections.emptyList();
     private Client smbClient;
+    private ServerInfoRepository serverInfoRepository;
 
     @Override
     public Cursor queryRoots(String[] projection) {
@@ -61,7 +64,7 @@ public class SmbProvider extends DocumentsProvider {
             String rootId = String.format("%s/%s", info.host, info.share);
             result.newRow()
                     .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
-                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, rootId + "/")
+                    .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, info.id + "/")
                     .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", rootId))
                     .add(DocumentsContract.Root.COLUMN_SUMMARY, info.username != null ? info.username : "Anonymous")
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
@@ -75,8 +78,10 @@ public class SmbProvider extends DocumentsProvider {
     public Cursor queryChildDocuments(String parentDocumentId, String[] projection, String sortOrder) {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_DOCUMENT_PROJECTION);
 
-        Log.d(TAG, "getting children of: " + parentDocumentId);
-        smbClient.listDir(parentDocumentId).forEach(entry -> {
+        URI uri = documentIdToUri(parentDocumentId);
+
+        Log.d(TAG, "getting children of: " + uri.toASCIIString());
+        smbClient.listDir(uri).forEach(entry -> {
                     Log.d(TAG, "found child document: " + "\"" + entry.getName() + "\"");
                     String fullPath = Paths.get(parentDocumentId, entry.getName()).toString();
                     String documentId = entry.isDirectory() ?
@@ -118,12 +123,13 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public ParcelFileDescriptor openDocument(String documentId, String mode, @Nullable CancellationSignal signal) {
-        Log.d(TAG, "opening document: " + "\"" + documentId + "\"");
+        URI uri = documentIdToUri(documentId);
+        Log.d(TAG, "opening document: " + "\"" + uri.toASCIIString() + "\"");
         if (!mode.equals("r")) {
             throw new UnsupportedOperationException("mode " + mode + " not supported");
         }
 
-        return smbClient.openProxyFile(documentId, mode);
+        return smbClient.openProxyFile(uri, mode);
     }
 
     @Override
@@ -133,7 +139,7 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        ServerInfoRepository serverInfoRepository = ServerInfoRepository.getInstance(getContext());
+        serverInfoRepository = ServerInfoRepository.getInstance(getContext());
         serverInfoRepository.getEnabledServers().subscribeOn(Schedulers.io()).subscribe(servers -> {
             this.servers = servers;
             Uri rootsUri = DocumentsContract.buildRootsUri("com.marcantony.smbprovider.documents");
@@ -145,6 +151,44 @@ public class SmbProvider extends DocumentsProvider {
 //        smbClient = new SmbjClient(storageManager);
 
         return true;
+    }
+
+    private URI documentIdToUri(String documentId) {
+        Path p = Paths.get(documentId);
+        int serverInfoId = Integer.parseInt(p.getName(0).toString());
+        ServerInfo info = serverInfoRepository.getServerInfo(serverInfoId);
+
+        String userInfo = getUserInfo(info);
+        String host = info.host;
+        String path = getUriPath(info, documentId);
+
+        try {
+            return new URI("smb", userInfo, host, -1, path, null, null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("could not build document URI", e);
+        }
+    }
+
+    private String getUserInfo(ServerInfo info) {
+        if (info.username == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(info.username);
+
+        if (info.password != null) {
+            sb.append(':').append(info.password);
+        }
+        return sb.toString();
+    }
+
+    private String getUriPath(ServerInfo info, String documentId) {
+        Path p = Paths.get(documentId);
+
+        Path dirPath = p.getNameCount() > 1 ? p.subpath(1, p.getNameCount()) : Paths.get("");
+        Path sharePath = Paths.get(info.share == null ? "" : info.share);
+        String finalPath = sharePath.resolve(dirPath).toString();
+
+        return "/" + finalPath + (documentId.endsWith("/") ? "/" : "");
     }
 
 }

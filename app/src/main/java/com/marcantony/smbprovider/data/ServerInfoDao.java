@@ -18,6 +18,9 @@ public interface ServerInfoDao {
     @Query("SELECT * FROM ServerInfo where isEnabled = 1")
     Flowable<List<ServerInfo>> getEnabled();
 
+    @Query("SELECT * FROM ServerInfo where id=:id")
+    ServerInfo getById(int id);
+
     @Insert
     Completable insert(ServerInfo server);
 
