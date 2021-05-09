@@ -48,4 +48,12 @@ public class ServerInfoRepository {
         serverInfoDao.delete(info).subscribeOn(Schedulers.io()).subscribe();
     }
 
+    public void addOrUpdateServer(ServerInfo info) {
+        if (info.id == ServerInfo.ID_UNSET) {
+            addServer(info);
+        } else {
+            updateServer(info);
+        }
+    }
+
 }

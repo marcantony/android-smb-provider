@@ -7,7 +7,9 @@ import androidx.room.PrimaryKey;
 @Entity
 public class ServerInfo {
 
-    @PrimaryKey(autoGenerate = true) public int id;
+    public static final int ID_UNSET = -1;
+
+    @PrimaryKey(autoGenerate = true) public int id = ID_UNSET;
     @NonNull public final String host;
     public final String share;
     public final String username;

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,13 +18,20 @@ import androidx.fragment.app.DialogFragment;
 import com.google.android.material.snackbar.Snackbar;
 import com.marcantony.smbprovider.data.ServerInfo;
 
-public class AddServerDialogFragment extends DialogFragment {
+public class ServerInfoDialogFragment extends DialogFragment {
 
-    public interface AddServerDialogListener {
-        void onSave(ServerInfo info);
+    public static final String ARG_INITIAL_HOST = "initial_host";
+    public static final String ARG_INITIAL_SHARE = "initial_share";
+    public static final String ARG_INITIAL_USERNAME = "initial_username";
+    public static final String ARG_INITIAL_PASSWORD = "initial_password";
+    public static final String ARG_INITIAL_ID = "initial_id";
+
+    public interface SubmitListener {
+        void onSubmit(ServerInfo info);
     }
 
-    private AddServerDialogListener listener;
+    private SubmitListener listener = null;
+    private ServerInfo initialState = null;
 
     @Nullable
     @Override
@@ -33,6 +41,17 @@ public class AddServerDialogFragment extends DialogFragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            initialState = new ServerInfo(
+                    arguments.getString(ARG_INITIAL_HOST),
+                    arguments.getString(ARG_INITIAL_SHARE),
+                    arguments.getString(ARG_INITIAL_USERNAME),
+                    arguments.getString(ARG_INITIAL_PASSWORD)
+            );
+            initialState.id = arguments.getInt(ARG_INITIAL_ID, ServerInfo.ID_UNSET);
+        }
+
         Button buttonSave = view.findViewById(R.id.buttonSave);
         buttonSave.setOnClickListener(v -> onClickSave(view));
 
@@ -51,16 +70,28 @@ public class AddServerDialogFragment extends DialogFragment {
                 buttonSave.setEnabled(s.length() > 0);
             }
         });
+
+        if (initialState != null) {
+            editTextHostname.setText(initialState.host);
+
+            EditText share = view.findViewById(R.id.editTextShare);
+            share.setText(initialState.share);
+
+            EditText username = view.findViewById(R.id.editTextUsername);
+            username.setText(initialState.username);
+
+            EditText password = view.findViewById(R.id.editTextPassword);
+            password.setText(initialState.password);
+        }
     }
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-
         try {
-            listener = (AddServerDialogListener) context;
+            listener = (SubmitListener) context;
         } catch (ClassCastException e) {
-            throw new ClassCastException("Activity must implement AddServerDialogListener");
+            Log.i("ServerInfoDialog", "host activity does not implement SubmitListener");
         }
     }
 
@@ -77,7 +108,12 @@ public class AddServerDialogFragment extends DialogFragment {
                     username.getText().toString(),
                     password.getText().toString()
             );
-            listener.onSave(info);
+
+            if (initialState != null) {
+                info.id = initialState.id;
+            }
+
+            listener.onSubmit(info);
             this.dismiss();
         } else {
             Snackbar.make(view, "Host must be provided", Snackbar.LENGTH_LONG).show();

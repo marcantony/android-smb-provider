@@ -1,5 +1,6 @@
 package com.marcantony.smbprovider;
 
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -7,6 +8,8 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.marcantony.smbprovider.data.ServerInfo;
@@ -21,6 +24,7 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
 
     private List<ServerInfo> servers;
     private final ServerStatusListener listener;
+    private final FragmentManager manager;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
@@ -29,8 +33,20 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
         private final Switch switchEnabled;
         private ServerInfo info;
 
-        public ViewHolder(View view, ServerStatusListener listener) {
+        public ViewHolder(View view, ServerStatusListener listener, FragmentManager manager) {
             super(view);
+
+            view.setOnClickListener(v -> {
+                DialogFragment dialog = new ServerInfoDialogFragment();
+                Bundle args = new Bundle();
+                args.putString(ServerInfoDialogFragment.ARG_INITIAL_HOST, info.host);
+                args.putString(ServerInfoDialogFragment.ARG_INITIAL_SHARE, info.share);
+                args.putString(ServerInfoDialogFragment.ARG_INITIAL_USERNAME, info.username);
+                args.putString(ServerInfoDialogFragment.ARG_INITIAL_PASSWORD, info.password);
+                args.putInt(ServerInfoDialogFragment.ARG_INITIAL_ID, info.id);
+                dialog.setArguments(args);
+                dialog.show(manager, "server info list");
+            });
 
             root = view.findViewById(R.id.textViewRoot);
             user = view.findViewById(R.id.textViewUser);
@@ -56,9 +72,10 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
 
     }
 
-    public ServerInfoAdapter(List<ServerInfo> servers, ServerStatusListener listener) {
+    public ServerInfoAdapter(List<ServerInfo> servers, ServerStatusListener listener, FragmentManager manager) {
         this.servers = servers;
         this.listener = listener;
+        this.manager = manager;
     }
 
     public void setServers(List<ServerInfo> servers) {
@@ -76,7 +93,7 @@ public class ServerInfoAdapter extends RecyclerView.Adapter<ServerInfoAdapter.Vi
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(viewType, parent, false);
-        return new ViewHolder(view, listener);
+        return new ViewHolder(view, listener, manager);
     }
 
     @Override

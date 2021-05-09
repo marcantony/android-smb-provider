@@ -20,7 +20,7 @@ import com.marcantony.smbprovider.data.ServerInfoRepository;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements AddServerDialogFragment.AddServerDialogListener {
+public class MainActivity extends AppCompatActivity implements ServerInfoDialogFragment.SubmitListener {
 
     private ServerListViewModel serverListViewModel;
     private ServerInfoAdapter serverInfoAdapter;
@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
         serverListViewModel.getServers().observe(this, serverInfoObserver);
 
         serverInfoAdapter = new ServerInfoAdapter(Collections.emptyList(), ((info) ->
-                serverListViewModel.updateServer(info)));
+                serverListViewModel.updateServer(info)), getSupportFragmentManager());
         RecyclerView recyclerView = findViewById(R.id.serverList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(serverInfoAdapter);
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
     }
 
     public void showDialog(View view) {
-        AddServerDialogFragment dialog = new AddServerDialogFragment();
+        ServerInfoDialogFragment dialog = new ServerInfoDialogFragment();
         dialog.show(getSupportFragmentManager(), "AddServerDialogFragment");
     }
 
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements AddServerDialogFr
     }
 
     @Override
-    public void onSave(ServerInfo info) {
-        serverListViewModel.addServer(info);
+    public void onSubmit(ServerInfo info) {
+        serverListViewModel.addOrUpdateServer(info);
     }
 }

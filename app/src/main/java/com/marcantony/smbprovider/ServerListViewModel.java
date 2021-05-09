@@ -33,6 +33,10 @@ public class ServerListViewModel extends ViewModel {
         repository.updateServer(info);
     }
 
+    public void addOrUpdateServer(ServerInfo info) {
+        repository.addOrUpdateServer(info);
+    }
+
     public void deleteServer(ServerInfo info) {
         repository.deleteServer(info);
     }
