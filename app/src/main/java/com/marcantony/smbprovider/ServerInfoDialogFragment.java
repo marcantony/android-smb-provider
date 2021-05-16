@@ -28,6 +28,7 @@ public class ServerInfoDialogFragment extends DialogFragment {
 
     public interface SubmitListener {
         void onSubmit(ServerInfo info);
+        void onDelete(ServerInfo info);
     }
 
     private SubmitListener listener = null;
@@ -50,6 +51,10 @@ public class ServerInfoDialogFragment extends DialogFragment {
                     arguments.getString(ARG_INITIAL_PASSWORD)
             );
             initialState.id = arguments.getInt(ARG_INITIAL_ID, ServerInfo.ID_UNSET);
+
+            Button buttonDelete = view.findViewById(R.id.buttonDelete);
+            buttonDelete.setVisibility(View.VISIBLE);
+            buttonDelete.setOnClickListener(v -> onClickDelete());
         }
 
         Button buttonSave = view.findViewById(R.id.buttonSave);
@@ -121,6 +126,11 @@ public class ServerInfoDialogFragment extends DialogFragment {
     }
 
     private void onClickCancel() {
+        this.dismiss();
+    }
+
+    private void onClickDelete() {
+        listener.onDelete(initialState);
         this.dismiss();
     }
 }

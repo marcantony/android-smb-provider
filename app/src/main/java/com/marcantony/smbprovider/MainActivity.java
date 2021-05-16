@@ -85,4 +85,9 @@ public class MainActivity extends AppCompatActivity implements ServerInfoDialogF
     public void onSubmit(ServerInfo info) {
         serverListViewModel.addOrUpdateServer(info);
     }
+
+    @Override
+    public void onDelete(ServerInfo info) {
+        serverListViewModel.deleteServer(info);
+    }
 }

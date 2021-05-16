@@ -87,5 +87,16 @@
         app:layout_constraintBaseline_toBaselineOf="@+id/buttonSave"
         app:layout_constraintEnd_toStartOf="@+id/buttonSave"
         app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/buttonDelete" />
+
+    <Button
+        android:id="@+id/buttonDelete"
+        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="@string/delete"
+        android:visibility="gone"
+        app:layout_constraintBaseline_toBaselineOf="@+id/buttonCancel"
         app:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
