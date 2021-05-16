@@ -64,6 +64,7 @@
 
     <Button
         android:id="@+id/buttonSave"
+        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -77,6 +78,7 @@
 
     <Button
         android:id="@+id/buttonCancel"
+        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
