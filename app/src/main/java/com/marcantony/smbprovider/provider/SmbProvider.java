@@ -64,11 +64,11 @@ public class SmbProvider extends DocumentsProvider {
         final MatrixCursor result = new MatrixCursor(projection != null ? projection : DEFAULT_ROOT_PROJECTION);
 
         for (ServerInfo info : servers) {
-            String rootId = String.format("%s/%s", info.host, info.share);
+            String title = String.format("SMB (%s/%s)", info.host, info.share == null ? "" : info.share);
             result.newRow()
-                    .add(DocumentsContract.Root.COLUMN_ROOT_ID, rootId)
+                    .add(DocumentsContract.Root.COLUMN_ROOT_ID, info.id)
                     .add(DocumentsContract.Root.COLUMN_DOCUMENT_ID, info.id + "/")
-                    .add(DocumentsContract.Root.COLUMN_TITLE, String.format("SMB (%s)", rootId))
+                    .add(DocumentsContract.Root.COLUMN_TITLE, title)
                     .add(DocumentsContract.Root.COLUMN_SUMMARY, info.username != null ? info.username : "Anonymous")
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
                     .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
