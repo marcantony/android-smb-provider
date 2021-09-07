@@ -95,7 +95,8 @@ public class SmbProvider extends DocumentsProvider {
                             .add(DocumentsContract.Document.COLUMN_MIME_TYPE, entry.isDirectory() ?
                                     DocumentsContract.Document.MIME_TYPE_DIR : entry.getStats().mimeType)
                             .add(DocumentsContract.Document.COLUMN_SIZE, entry.getStats().size)
-                            .add(DocumentsContract.Document.COLUMN_FLAGS, DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL)
+                            .add(DocumentsContract.Document.COLUMN_FLAGS, entry.getStats().mimeType.startsWith("image/") ?
+                                    DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL : null)
                             .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, entry.getStats().lastModifiedMillis);
                     entry.close();
         });
@@ -118,7 +119,7 @@ public class SmbProvider extends DocumentsProvider {
                 .add(DocumentsContract.Document.COLUMN_MIME_TYPE, isDirectory ?
                         DocumentsContract.Document.MIME_TYPE_DIR : stats.mimeType)
                 .add(DocumentsContract.Document.COLUMN_SIZE, stats.size)
-                .add(DocumentsContract.Document.COLUMN_FLAGS, DocumentsContract.Document.FLAG_SUPPORTS_THUMBNAIL)
+                .add(DocumentsContract.Document.COLUMN_FLAGS, null)
                 .add(DocumentsContract.Document.COLUMN_LAST_MODIFIED, stats.lastModifiedMillis);
 
         return result;
