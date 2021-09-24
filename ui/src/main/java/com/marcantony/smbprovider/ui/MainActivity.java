@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.ui;
 
 import android.content.Intent;
 import android.os.Bundle;

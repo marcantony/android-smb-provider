@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider;
+package com.marcantony.smbprovider.ui;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
