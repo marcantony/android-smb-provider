@@ -13,9 +13,6 @@ import android.provider.DocumentsContract;
 import android.provider.DocumentsProvider;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
-import com.marcantony.smbprovider.R;
 import com.marcantony.smbprovider.persistence.RoomServerInfoRepository;
 import com.marcantony.smbprovider.domain.ServerInfo;
 import com.marcantony.smbprovider.domain.ServerInfoRepository;
@@ -71,7 +68,7 @@ public class SmbProvider extends DocumentsProvider {
                     .add(DocumentsContract.Root.COLUMN_TITLE, title)
                     .add(DocumentsContract.Root.COLUMN_SUMMARY, info.username != null ? info.username : "Anonymous")
                     .add(DocumentsContract.Root.COLUMN_FLAGS, null)
-                    .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.ic_launcher_foreground);
+                    .add(DocumentsContract.Root.COLUMN_ICON, R.drawable.smb_provider_icon);
         }
 
         return result;
@@ -126,7 +123,7 @@ public class SmbProvider extends DocumentsProvider {
     }
 
     @Override
-    public ParcelFileDescriptor openDocument(String documentId, String mode, @Nullable CancellationSignal signal) {
+    public ParcelFileDescriptor openDocument(String documentId, String mode, CancellationSignal signal) {
         URI uri = documentIdToUri(documentId);
         Log.d(TAG, "opening document: " + "\"" + uri.toASCIIString() + "\"");
         if (!mode.equals("r")) {
