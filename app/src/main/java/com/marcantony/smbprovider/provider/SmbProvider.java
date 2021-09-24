@@ -16,12 +16,11 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.marcantony.smbprovider.R;
-import com.marcantony.smbprovider.data.ServerInfo;
+import com.marcantony.smbprovider.domain.ServerInfo;
 import com.marcantony.smbprovider.data.ServerInfoRepository;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
-import com.marcantony.smbprovider.provider.smb.smbj.SmbjClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;

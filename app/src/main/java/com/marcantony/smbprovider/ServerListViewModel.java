@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveDataReactiveStreams;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.marcantony.smbprovider.data.ServerInfo;
+import com.marcantony.smbprovider.domain.ServerInfo;
 import com.marcantony.smbprovider.data.ServerInfoRepository;
 
 import java.util.List;

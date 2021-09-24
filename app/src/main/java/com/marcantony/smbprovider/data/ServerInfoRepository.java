@@ -2,6 +2,8 @@ package com.marcantony.smbprovider.data;
 
 import android.content.Context;
 
+import com.marcantony.smbprovider.domain.ServerInfo;
+
 import java.util.List;
 
 import io.reactivex.rxjava3.core.Flowable;

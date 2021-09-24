@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.data;
+package com.marcantony.smbprovider.domain;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;

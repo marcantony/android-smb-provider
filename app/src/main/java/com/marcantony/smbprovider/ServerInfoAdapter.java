@@ -12,7 +12,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.marcantony.smbprovider.data.ServerInfo;
+import com.marcantony.smbprovider.domain.ServerInfo;
 
 import java.util.List;
 
