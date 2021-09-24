@@ -1,7 +1,5 @@
 package com.marcantony.smbprovider.smb;
 
-import androidx.annotation.NonNull;
-
 import java.util.Optional;
 
 public class SmbDetails {
@@ -31,7 +29,6 @@ public class SmbDetails {
         this.authDetails = Optional.ofNullable(authDetails);
     }
 
-    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
