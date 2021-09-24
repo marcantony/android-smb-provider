@@ -29,6 +29,8 @@ android {
 }
 
 dependencies {
+    implementation project(':domain')
+
     implementation 'com.hierynomus:smbj:0.10.0'
     implementation 'eu.agno3.jcifs:jcifs-ng:2.1.5'
     implementation('org.bouncycastle:bcprov-jdk15on') {
