@@ -3,3 +3,4 @@ rootProject.name = "SMB Provider"
 include ':domain'
 include ':persistence'
 include ':provider'
+include ':ui'
