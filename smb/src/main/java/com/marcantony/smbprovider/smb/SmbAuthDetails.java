@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.provider.smb;
+package com.marcantony.smbprovider.smb;
 
 import androidx.annotation.NonNull;
 

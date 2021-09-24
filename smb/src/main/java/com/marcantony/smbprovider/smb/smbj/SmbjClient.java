@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.provider.smb.smbj;
+package com.marcantony.smbprovider.smb.smbj;
 
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -11,9 +11,9 @@ import com.hierynomus.smbj.auth.AuthenticationContext;
 import com.hierynomus.smbj.connection.Connection;
 import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
-import com.marcantony.smbprovider.provider.smb.AsyncProxyFileDescriptorCallback;
-import com.marcantony.smbprovider.provider.smb.Client;
-import com.marcantony.smbprovider.provider.smb.Entry;
+import com.marcantony.smbprovider.smb.AsyncProxyFileDescriptorCallback;
+import com.marcantony.smbprovider.smb.Client;
+import com.marcantony.smbprovider.smb.Entry;
 
 import java.io.IOException;
 import java.net.URI;

@@ -31,14 +31,8 @@ android {
 dependencies {
     implementation project(':domain')
     implementation project(':persistence')
+    implementation project(':smb')
 
-    implementation 'com.hierynomus:smbj:0.10.0'
-    implementation 'eu.agno3.jcifs:jcifs-ng:2.1.5'
-    implementation('org.bouncycastle:bcprov-jdk15on') {
-        version {
-            strictly '1.65'
-        }
-    }
     implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
 

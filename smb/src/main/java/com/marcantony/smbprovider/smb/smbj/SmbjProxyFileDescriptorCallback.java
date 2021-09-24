@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.provider.smb.smbj;
+package com.marcantony.smbprovider.smb.smbj;
 
 import android.os.ProxyFileDescriptorCallback;
 import android.util.Log;
@@ -13,7 +13,6 @@ import com.hierynomus.smbj.session.Session;
 import com.hierynomus.smbj.share.DiskShare;
 import com.hierynomus.smbj.share.File;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.EnumSet;
 

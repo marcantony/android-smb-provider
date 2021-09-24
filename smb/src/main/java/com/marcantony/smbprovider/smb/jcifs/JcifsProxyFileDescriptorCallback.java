@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.provider.smb.jcifs;
+package com.marcantony.smbprovider.smb.jcifs;
 
 import android.os.ProxyFileDescriptorCallback;
 import android.system.ErrnoException;
@@ -9,7 +9,6 @@ import java.net.MalformedURLException;
 
 import jcifs.CIFSContext;
 import jcifs.SmbConstants;
-import jcifs.context.SingletonContext;
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbRandomAccessFile;
 
