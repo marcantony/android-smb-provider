@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.data;
+package com.marcantony.smbprovider.persistence;
 
 import android.content.Context;
 

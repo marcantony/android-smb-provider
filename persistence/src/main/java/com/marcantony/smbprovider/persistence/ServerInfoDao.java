@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.data;
+package com.marcantony.smbprovider.persistence;
 
 import androidx.room.Dao;
 import androidx.room.Delete;

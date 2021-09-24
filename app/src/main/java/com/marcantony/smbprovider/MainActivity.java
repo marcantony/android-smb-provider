@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.marcantony.smbprovider.data.RoomServerInfoRepository;
+import com.marcantony.smbprovider.persistence.RoomServerInfoRepository;
 import com.marcantony.smbprovider.domain.ServerInfo;
 
 import java.util.Collections;
