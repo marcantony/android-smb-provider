@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.marcantony.smbprovider.domain.ServerInfo;
-import com.marcantony.smbprovider.data.ServerInfoRepository;
+import com.marcantony.smbprovider.domain.ServerInfoRepository;
 
 import java.util.List;
 

@@ -16,8 +16,9 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.marcantony.smbprovider.R;
+import com.marcantony.smbprovider.data.RoomServerInfoRepository;
 import com.marcantony.smbprovider.domain.ServerInfo;
-import com.marcantony.smbprovider.data.ServerInfoRepository;
+import com.marcantony.smbprovider.domain.ServerInfoRepository;
 import com.marcantony.smbprovider.provider.smb.Client;
 import com.marcantony.smbprovider.provider.smb.EntryStats;
 import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
@@ -142,7 +143,7 @@ public class SmbProvider extends DocumentsProvider {
 
     @Override
     public boolean onCreate() {
-        serverInfoRepository = ServerInfoRepository.getInstance(getContext());
+        serverInfoRepository = RoomServerInfoRepository.getInstance(getContext());
         serverInfoRepository.getEnabledServers().subscribeOn(Schedulers.io()).subscribe(servers -> {
             this.servers = servers;
             Uri rootsUri = DocumentsContract.buildRootsUri("com.marcantony.smbprovider.documents");

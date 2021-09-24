@@ -14,8 +14,8 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.marcantony.smbprovider.data.RoomServerInfoRepository;
 import com.marcantony.smbprovider.domain.ServerInfo;
-import com.marcantony.smbprovider.data.ServerInfoRepository;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements ServerInfoDialogF
         setSupportActionBar(toolbar);
 
         serverListViewModel = new ViewModelProvider(this,
-                new ServerListViewModel.Factory(ServerInfoRepository.getInstance(getApplicationContext())))
+                new ServerListViewModel.Factory(RoomServerInfoRepository.getInstance(getApplicationContext())))
                 .get(ServerListViewModel.class);
         final Observer<List<ServerInfo>> serverInfoObserver = serverInfoList ->
                 serverInfoAdapter.setServers(serverInfoList);
