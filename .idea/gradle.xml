@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/persistence" />
+            <option value="$PROJECT_DIR$/smb" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
