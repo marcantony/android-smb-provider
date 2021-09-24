@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.smb.smbj;
+package com.marcantony.smbprovider.provider.smb.smbj;
 
 import android.os.ProxyFileDescriptorCallback;
 import android.util.Log;

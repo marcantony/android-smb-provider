@@ -1,4 +1,4 @@
-package com.marcantony.smbprovider.smb;
+package com.marcantony.smbprovider.provider.smb;
 
 public interface Entry {
 

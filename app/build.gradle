@@ -31,7 +31,7 @@ android {
 dependencies {
     implementation project(':domain')
     implementation project(':persistence')
-    implementation project(':smb')
+    implementation project(':provider')
 
     implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'

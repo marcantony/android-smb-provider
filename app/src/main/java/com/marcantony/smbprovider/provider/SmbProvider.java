@@ -19,9 +19,9 @@ import com.marcantony.smbprovider.R;
 import com.marcantony.smbprovider.persistence.RoomServerInfoRepository;
 import com.marcantony.smbprovider.domain.ServerInfo;
 import com.marcantony.smbprovider.domain.ServerInfoRepository;
-import com.marcantony.smbprovider.smb.Client;
-import com.marcantony.smbprovider.smb.EntryStats;
-import com.marcantony.smbprovider.smb.jcifs.JcifsClient;
+import com.marcantony.smbprovider.provider.smb.Client;
+import com.marcantony.smbprovider.provider.smb.EntryStats;
+import com.marcantony.smbprovider.provider.smb.jcifs.JcifsClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;

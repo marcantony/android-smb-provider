@@ -1,7 +1,7 @@
-package com.marcantony.smbprovider.smb.jcifs;
+package com.marcantony.smbprovider.provider.smb.jcifs;
 
-import com.marcantony.smbprovider.smb.Entry;
-import com.marcantony.smbprovider.smb.EntryStats;
+import com.marcantony.smbprovider.provider.smb.Entry;
+import com.marcantony.smbprovider.provider.smb.EntryStats;
 
 import java.nio.file.Paths;
 
