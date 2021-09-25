@@ -7,7 +7,7 @@
     <application>
         <provider
             android:name="com.marcantony.smbprovider.provider.SmbProvider"
-            android:authorities="com.marcantony.smbprovider.documents"
+            android:authorities="${documentProviderAuthority}"
             android:exported="true"
             android:grantUriPermissions="true"
             android:permission="android.permission.MANAGE_DOCUMENTS">

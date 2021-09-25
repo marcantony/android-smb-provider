@@ -143,7 +143,7 @@ public class SmbProvider extends DocumentsProvider {
         serverInfoRepository = RoomServerInfoRepository.getInstance(getContext());
         serverInfoRepository.getEnabledServers().subscribeOn(Schedulers.io()).subscribe(servers -> {
             this.servers = servers;
-            Uri rootsUri = DocumentsContract.buildRootsUri("com.marcantony.smbprovider.documents");
+            Uri rootsUri = DocumentsContract.buildRootsUri(BuildConfig.DOCUMENT_PROVIDER_AUTHORITY);
             getContext().getContentResolver().notifyChange(rootsUri, null);
         });
 
