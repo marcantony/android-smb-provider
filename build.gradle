@@ -19,6 +19,11 @@ allprojects {
     }
 }
 
+ext {
+    rxjavaVersion = '3.0.0'
+    roomVersion = '2.3.0'
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

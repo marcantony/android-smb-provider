@@ -36,7 +36,7 @@ dependencies {
     implementation project(':domain')
     implementation project(':persistence')
 
-    implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
+    implementation "io.reactivex.rxjava3:rxjava:${rootProject.ext.rxjavaVersion}"
 
     implementation 'com.hierynomus:smbj:0.10.0'
     implementation 'eu.agno3.jcifs:jcifs-ng:2.1.5'

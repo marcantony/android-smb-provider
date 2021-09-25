@@ -29,8 +29,8 @@ android {
 
 dependencies {
 
-    implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
-    implementation "androidx.room:room-common:2.3.0"
+    implementation "io.reactivex.rxjava3:rxjava:${rootProject.ext.rxjavaVersion}"
+    implementation "androidx.room:room-common:${rootProject.ext.roomVersion}"
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
